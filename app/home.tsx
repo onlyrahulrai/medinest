@@ -21,6 +21,7 @@ import {
   getTodaysDoses,
   recordDose,
   DoseHistory,
+  getUserProfile,
 } from "../utils/storage";
 import { useFocusEffect } from "@react-navigation/native";
 import {
@@ -61,6 +62,13 @@ const QUICK_ACTIONS = [
     route: "/refills" as const,
     color: "#E64A19",
     gradient: ["#FF5722", "#E64A19"] as [string, string],
+  },
+  {
+    icon: "people-outline" as const,
+    label: "Caregiver\nDashboard",
+    route: "/caregiver" as const,
+    color: "#0A7AFF",
+    gradient: ["#0A7AFF", "#0660CC"] as [string, string],
   },
 ];
 
@@ -137,13 +145,17 @@ export default function HomeScreen() {
   const [todaysMedications, setTodaysMedications] = useState<Medication[]>([]);
   const [completedDoses, setCompletedDoses] = useState(0);
   const [doseHistory, setDoseHistory] = useState<DoseHistory[]>([]);
+  const [userName, setUserName] = useState<string>("User");
 
   const loadMedications = useCallback(async () => {
     try {
-      const [allMedications, todaysDoses] = await Promise.all([
+      const [allMedications, todaysDoses, profile] = await Promise.all([
         getMedications(),
         getTodaysDoses(),
+        getUserProfile()
       ]);
+
+      if (profile) setUserName(profile.name);
 
       setDoseHistory(todaysDoses);
       setMedications(allMedications);
@@ -159,9 +171,9 @@ export default function HomeScreen() {
           durationDays === -1 ||
           (today >= startDate &&
             today <=
-              new Date(
-                startDate.getTime() + durationDays * 24 * 60 * 60 * 1000
-              ))
+            new Date(
+              startDate.getTime() + durationDays * 24 * 60 * 60 * 1000
+            ))
         ) {
           return true;
         }
@@ -248,14 +260,63 @@ export default function HomeScreen() {
       ? completedDoses / (todaysMedications.length * 2)
       : 0;
 
+  // Find next upcoming medication
+  const getNextMedication = () => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    let nextMed: Medication | null = null;
+    let nextTime = "";
+    let smallestDiff = Infinity;
+
+    for (const med of todaysMedications) {
+      if (isDoseTaken(med.id)) continue;
+      for (const time of med.times) {
+        const [h, m] = time.split(":").map(Number);
+        const medMinutes = h * 60 + m;
+        const diff = medMinutes - currentMinutes;
+        if (diff > 0 && diff < smallestDiff) {
+          smallestDiff = diff;
+          nextMed = med;
+          nextTime = time;
+        }
+      }
+    }
+    if (!nextMed) {
+      // Check for any untaken meds (even past time)
+      for (const med of todaysMedications) {
+        if (!isDoseTaken(med.id)) {
+          return { medication: med, time: med.times[0], minutesUntil: 0 };
+        }
+      }
+    }
+    return nextMed ? { medication: nextMed, time: nextTime, minutesUntil: smallestDiff } : null;
+  };
+
+  const nextMed = getNextMedication();
+
+  const formatCountdown = (minutes: number) => {
+    if (minutes <= 0) return "Now";
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs > 0) return `${hrs}h ${mins}m`;
+    return `${mins}m`;
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <LinearGradient colors={["#1a8e2d", "#146922"]} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerTop}>
             <View style={styles.flex1}>
-              <Text style={styles.greeting}>Daily Progress</Text>
+              <Text style={styles.greeting}>Hello, {userName.split(' ')[0]}</Text>
+              <Text style={{ color: 'white', opacity: 0.8, fontSize: 14 }}>Daily Progress</Text>
             </View>
+            <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileButton}>
+              <View style={styles.avatarMini}>
+                <Text style={styles.avatarMiniText}>{userName.charAt(0).toUpperCase()}</Text>
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.notificationButton}
               onPress={() => setShowNotifications(true)}
@@ -279,6 +340,52 @@ export default function HomeScreen() {
       </LinearGradient>
 
       <View style={styles.content}>
+        {/* Next Medication Section */}
+        {todaysMedications.length > 0 && (
+          <View style={styles.nextMedSection}>
+            <Text style={styles.sectionTitle}>Next Medication</Text>
+            {nextMed ? (
+              <View style={styles.nextMedCard}>
+                <View style={styles.nextMedLeft}>
+                  <View style={[styles.nextMedIcon, { backgroundColor: `${nextMed.medication.color}15` }]}>
+                    <Ionicons name="medical" size={24} color={nextMed.medication.color} />
+                  </View>
+                  <View style={styles.nextMedInfo}>
+                    <Text style={styles.nextMedName}>{nextMed.medication.name}</Text>
+                    <Text style={styles.nextMedDosage}>{nextMed.medication.dosage}</Text>
+                    <View style={styles.nextMedTimeRow}>
+                      <Ionicons name="time-outline" size={14} color="#999" />
+                      <Text style={styles.nextMedTime}>{nextMed.time}</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.nextMedRight}>
+                  <View style={styles.countdownContainer}>
+                    <Text style={styles.countdownLabel}>In</Text>
+                    <Text style={styles.countdownValue}>{formatCountdown(nextMed.minutesUntil)}</Text>
+                  </View>
+                  {!isDoseTaken(nextMed.medication.id) && (
+                    <TouchableOpacity
+                      style={[styles.takeNowBtn, { backgroundColor: nextMed.medication.color }]}
+                      onPress={() => handleTakeDose(nextMed.medication)}
+                    >
+                      <Text style={styles.takeNowText}>Take Now</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.allDoneCard}>
+                <Ionicons name="checkmark-circle" size={32} color="#4CAF50" />
+                <View style={styles.allDoneTextContainer}>
+                  <Text style={styles.allDoneTitle}>All Done!</Text>
+                  <Text style={styles.allDoneSubtitle}>All medications taken for today</Text>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={styles.quickActionsContainer}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
@@ -352,6 +459,12 @@ export default function HomeScreen() {
                       <Text style={styles.timeText}>{medication.times[0]}</Text>
                     </View>
                   </View>
+                  <TouchableOpacity
+                    style={styles.editDoseButton}
+                    onPress={() => router.push(`/medications/edit?id=${medication.id}`)}
+                  >
+                    <Ionicons name="create-outline" size={20} color="#666" />
+                  </TouchableOpacity>
                   {taken ? (
                     <View style={[styles.takenBadge]}>
                       <Ionicons
@@ -443,10 +556,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   greeting: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 22,
+    fontWeight: "700",
     color: "white",
-    opacity: 0.9,
   },
   content: {
     flex: 1,
@@ -565,6 +677,122 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
+  editDoseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#f5f5f5",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 6,
+    marginRight: 4,
+  },
+  nextMedSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  nextMedCard: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: "#1a8e2d",
+  },
+  nextMedLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  nextMedIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  nextMedInfo: {
+    flex: 1,
+  },
+  nextMedName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 2,
+  },
+  nextMedDosage: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  nextMedTimeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  nextMedTime: {
+    fontSize: 13,
+    color: "#999",
+  },
+  nextMedRight: {
+    alignItems: "center",
+    marginLeft: 12,
+  },
+  countdownContainer: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  countdownLabel: {
+    fontSize: 11,
+    color: "#999",
+    fontWeight: "500",
+  },
+  countdownValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#1a8e2d",
+  },
+  takeNowBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  takeNowText: {
+    color: "white",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  allDoneCard: {
+    backgroundColor: "#E8F5E9",
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    gap: 14,
+  },
+  allDoneTextContainer: {
+    flex: 1,
+  },
+  allDoneTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2E7D32",
+    marginBottom: 2,
+  },
+  allDoneSubtitle: {
+    fontSize: 14,
+    color: "#4CAF50",
+  },
   progressContainer: {
     alignItems: "center",
     justifyContent: "center",
@@ -591,6 +819,24 @@ const styles = StyleSheet.create({
   },
   flex1: {
     flex: 1,
+  },
+  profileButton: {
+    marginRight: 8,
+  },
+  avatarMini: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  avatarMiniText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   notificationButton: {
     position: "relative",

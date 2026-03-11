@@ -1,3 +1,4 @@
+import React from 'react';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Platform } from "react-native";
@@ -22,6 +23,26 @@ export default function Layout() {
           }}
         />
         <Stack.Screen
+          name="(auth)"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="home"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="role-select"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
           name="medications/add"
           options={{
             headerShown: false,
@@ -30,7 +51,7 @@ export default function Layout() {
           }}
         />
         <Stack.Screen
-          name="refills/index"
+          name="refills"
           options={{
             headerShown: false,
             headerBackTitle: "",
@@ -38,7 +59,7 @@ export default function Layout() {
           }}
         />
         <Stack.Screen
-          name="calendar/index"
+          name="calendar"
           options={{
             headerShown: false,
             headerBackTitle: "",
@@ -46,11 +67,55 @@ export default function Layout() {
           }}
         />
         <Stack.Screen
-          name="history/index"
+          name="history"
           options={{
             headerShown: false,
             headerBackTitle: "",
             title: "",
+          }}
+        />
+        <Stack.Screen
+          name="profile/index"
+          options={{
+            headerShown: false,
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="profile/edit"
+          options={{
+            headerShown: false,
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="settings/index"
+          options={{
+            headerShown: false,
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="(onboarding)"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+            animation: "fade",
+          }}
+        />
+        <Stack.Screen
+          name="medications/edit"
+          options={{
+            headerShown: false,
+            headerBackTitle: "",
+            title: "",
+          }}
+        />
+        <Stack.Screen
+          name="caregiver/index"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
           }}
         />
       </Stack>

@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
+import { authStorage } from "../utils/authStorage";
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -23,8 +24,17 @@ export default function SplashScreen() {
       }),
     ]).start();
 
-    const timer = setTimeout(() => {
-      router.replace("/auth");
+    const timer = setTimeout(async () => {
+      try {
+        const token = await authStorage.getToken();
+        if (token) {
+          router.replace("/role-select");
+        } else {
+          router.replace("/(auth)/login");
+        }
+      } catch (e) {
+        router.replace("/(auth)/login");
+      }
     }, 2000);
 
     return () => clearTimeout(timer);

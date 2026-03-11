@@ -2,6 +2,24 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MEDICATIONS_KEY = "@medications";
 const DOSE_HISTORY_KEY = "@dose_history";
+const USER_PROFILE_KEY = "@user_profile";
+
+export interface UserProfile {
+  name: string;
+  age: string;
+  gender: string;
+  conditions: string[];
+  phoneNumber: string;
+  emergencyContact: {
+    name: string;
+    phoneNumber: string;
+    relation: string;
+  } | null;
+  reminderTimes: string[];
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  isOnboardingCompleted: boolean;
+}
 
 export interface Medication {
   id: string;
@@ -136,9 +154,28 @@ export async function recordDose(
 
 export async function clearAllData(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove([MEDICATIONS_KEY, DOSE_HISTORY_KEY]);
+    await AsyncStorage.multiRemove([MEDICATIONS_KEY, DOSE_HISTORY_KEY, USER_PROFILE_KEY]);
   } catch (error) {
     console.error("Error clearing data:", error);
+    throw error;
+  }
+}
+
+export async function getUserProfile(): Promise<UserProfile | null> {
+  try {
+    const data = await AsyncStorage.getItem(USER_PROFILE_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+    return null;
+  }
+}
+
+export async function saveUserProfile(profile: UserProfile): Promise<void> {
+  try {
+    await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+  } catch (error) {
+    console.error("Error saving user profile:", error);
     throw error;
   }
 }

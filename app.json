@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "bycicle-rental-app",
-    "slug": "bycicle-rental-app",
+    "name": "Medinest",
+    "slug": "medinest",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,13 +9,15 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.onlyrahulrai.medinest"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.onlyrahulrai.medinest"
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +38,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bf01eb60-88a4-4956-b284-5ac374be9c59"
+      }
     }
   }
 }
