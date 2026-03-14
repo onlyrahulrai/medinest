@@ -13,6 +13,7 @@ export default function Step4Screen() {
     const name = params.name as string;
     const age = params.age as string;
     const gender = params.gender as string;
+    const weight = params.weight as string;
     const conditionsString = params.conditions as string;
     const phoneNumber = params.phoneNumber as string;
     const emergencyName = params.emergencyName as string;
@@ -32,6 +33,7 @@ export default function Step4Screen() {
                 name,
                 age,
                 gender,
+                weight,
                 conditions,
                 phoneNumber,
                 caregivers: emergencyName ? [{
@@ -49,7 +51,7 @@ export default function Step4Screen() {
             await saveUserProfile(profileData);
 
             // Redirect to Home
-            router.replace('/home');
+            router.replace('/(tabs)');
         } catch (error) {
             console.error('Failed to save profile', error);
         } finally {

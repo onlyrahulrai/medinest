@@ -3,11 +3,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const MEDICATIONS_KEY = "@medications";
 const DOSE_HISTORY_KEY = "@dose_history";
 const USER_PROFILE_KEY = "@user_profile";
+ 
+export interface WorkoutPlan {
+  goal: 'weight_loss' | 'muscle_gain' | 'fitness' | 'strength' | 'none';
+  frequency: string;
+  intensity: 'light' | 'moderate' | 'high';
+  lastUpdated: string;
+}
 
 export interface UserProfile {
   name: string;
   age: string;
   gender: string;
+  weight: string;
   conditions: string[];
   phoneNumber: string;
   caregivers: Array<{
@@ -20,6 +28,7 @@ export interface UserProfile {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   isOnboardingCompleted: boolean;
+  workoutPlan?: WorkoutPlan;
 }
 
 export interface Medication {

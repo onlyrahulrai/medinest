@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Modal, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getUserProfile, UserProfile, saveUserProfile } from '../../utils/storage';
@@ -51,7 +52,7 @@ export default function ProfileScreen() {
     if (!profile) return <View style={styles.container} />;
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
                     <Ionicons name="arrow-back" size={24} color="#333" />
@@ -62,13 +63,18 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView 
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={true} 
+                contentContainerStyle={styles.scrollContent}
+                bounces={true}
+            >
                 <View style={styles.avatarSection}>
                     <View style={styles.avatarPlaceholder}>
                         <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
                     </View>
                     <Text style={styles.name}>{profile.name}</Text>
-                    <Text style={styles.subText}>{profile.age} years • {profile.gender}</Text>
+                    <Text style={styles.subText}>{profile.age} years • {profile.gender} • {profile.weight} kg</Text>
                 </View>
 
                 <View style={styles.section}>
@@ -167,7 +173,7 @@ export default function ProfileScreen() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -180,12 +186,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 16,
         paddingBottom: 16,
+        paddingTop: 8,
         backgroundColor: 'white',
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
+    },
+    scrollView: {
+        flex: 1,
     },
     headerTitle: {
         fontSize: 18,
@@ -196,8 +205,9 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     scrollContent: {
+        flexGrow: 1,
         padding: 20,
-        paddingBottom: 40,
+        paddingBottom: 100,
     },
     avatarSection: {
         alignItems: 'center',

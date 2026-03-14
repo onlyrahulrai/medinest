@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +29,7 @@ export default function EditProfileScreen() {
     const [emergencyPhone, setEmergencyPhone] = useState('');
     const [emergencyRelation, setEmergencyRelation] = useState('');
     const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+    const [weight, setWeight] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -41,11 +43,12 @@ export default function EditProfileScreen() {
             setName(data.name);
             setAge(data.age);
             setGender(data.gender);
+            setWeight(data.weight || '');
             setPhoneNumber(data.phoneNumber);
-            if (data.emergencyContact) {
-                setEmergencyName(data.emergencyContact.name);
-                setEmergencyPhone(data.emergencyContact.phoneNumber);
-                setEmergencyRelation(data.emergencyContact.relation);
+            if (data.caregivers && data.caregivers.length > 0) {
+                setEmergencyName(data.caregivers[0].name);
+                setEmergencyPhone(data.caregivers[0].phoneNumber);
+                setEmergencyRelation(data.caregivers[0].relation);
             }
             setSelectedConditions(data.conditions || []);
         }
@@ -82,12 +85,14 @@ export default function EditProfileScreen() {
                 name,
                 age,
                 gender,
+                weight,
                 phoneNumber,
-                emergencyContact: emergencyName ? {
+                caregivers: emergencyName ? [{
+                    id: profile.caregivers && profile.caregivers[0]?.id ? profile.caregivers[0].id : Math.random().toString(36).substr(2, 9),
                     name: emergencyName,
                     phoneNumber: emergencyPhone,
-                    relation: emergencyRelation
-                } : null,
+                    relation: emergencyRelation || "Other"
+                }] : [],
                 conditions: selectedConditions,
             };
 
@@ -104,7 +109,8 @@ export default function EditProfileScreen() {
     if (!profile) return <View style={styles.container} />;
 
     return (
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="close" size={24} color="#333" />
@@ -113,7 +119,12 @@ export default function EditProfileScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={true}
+                bounces={true}
+            >
                 <View style={styles.formSection}>
                     <Text style={styles.sectionHeader}>Basic Information</Text>
 
@@ -130,6 +141,15 @@ export default function EditProfileScreen() {
                         style={styles.input}
                         value={age}
                         onChangeText={setAge}
+                        keyboardType="number-pad"
+                        placeholderTextColor="#999"
+                    />
+ 
+                    <Text style={styles.label}>Weight (kg) *</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={weight}
+                        onChangeText={setWeight}
                         keyboardType="number-pad"
                         placeholderTextColor="#999"
                     />
@@ -225,7 +245,8 @@ export default function EditProfileScreen() {
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
@@ -238,11 +259,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 16,
+        paddingTop: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
+    },
+    scrollView: {
+        flex: 1,
     },
     headerTitle: {
         fontSize: 18,
@@ -255,6 +279,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     scrollContent: {
+        flexGrow: 1,
         padding: 24,
         paddingBottom: 40,
     },

@@ -31,6 +31,7 @@ export default function Step2Screen() {
   const name = params.name as string;
   const age = params.age as string;
   const gender = params.gender as string;
+  const weight = params.weight as string;
   const phoneNumber = params.phoneNumber as string;
 
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
@@ -60,6 +61,7 @@ export default function Step2Screen() {
         name,
         age,
         gender,
+        weight,
         phoneNumber,
         otherCondition: otherCondition.trim(),
         conditions: JSON.stringify(selectedConditions),

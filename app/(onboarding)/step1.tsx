@@ -9,6 +9,7 @@ export default function Step1Screen() {
     const [name, setName] = useState('');
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('');
+    const [weight, setWeight] = useState('');
 
     const phoneNumber = useLocalSearchParams().phoneNumber as string;
 
@@ -18,11 +19,11 @@ export default function Step1Screen() {
         }
         router.push({
             pathname: '/(onboarding)/step2' as any,
-            params: { name, age, gender, phoneNumber }
+            params: { name, age, gender, weight, phoneNumber }
         });
     };
 
-    const isNextDisabled = !name.trim() || !age.trim() || !gender;
+    const isNextDisabled = !name.trim() || !age.trim() || !gender || !weight.trim();
 
     return (
         <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -59,6 +60,16 @@ export default function Step1Screen() {
                         placeholder="e.g., 28"
                         value={age}
                         onChangeText={setAge}
+                        keyboardType="number-pad"
+                        placeholderTextColor="#999"
+                    />
+ 
+                    <Text style={styles.label}>Weight (kg)</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="e.g., 70"
+                        value={weight}
+                        onChangeText={setWeight}
                         keyboardType="number-pad"
                         placeholderTextColor="#999"
                     />

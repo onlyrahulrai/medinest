@@ -25,12 +25,12 @@ import {
   recordDose,
   DoseHistory,
   getUserProfile,
-} from "../utils/storage";
+} from "../../utils/storage";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   registerForPushNotificationsAsync,
   scheduleMedicationReminder,
-} from "../utils/notifications";
+} from "../../utils/notifications";
 
 const { width } = Dimensions.get("window");
 
@@ -261,7 +261,7 @@ export default function HomeScreen() {
 
       // Filter medications for today
       const today = new Date();
-      const todayMeds = allMedications.filter((med) => {
+      const todayMeds = allMedications.filter((med: Medication) => {
         const startDate = new Date(med.startDate);
         const durationDays = parseInt(med.duration.split(" ")[0]);
 
@@ -282,7 +282,7 @@ export default function HomeScreen() {
       setTodaysMedications(todayMeds);
 
       // Calculate completed doses
-      const completed = todaysDoses.filter((dose) => dose.taken).length;
+      const completed = todaysDoses.filter((dose: DoseHistory) => dose.taken).length;
       setCompletedDoses(completed);
     } catch (error) {
       console.error("Error loading medications:", error);
@@ -403,7 +403,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
       <View style={styles.mainWrapper}>
         <LinearGradient
           colors={["#0F766E", "#047857"]}
@@ -713,7 +713,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   mainWrapper: {
-    flex: 1,
     backgroundColor: "#F8FAFC", // Elegant light premium gray background
   },
   headerBackground: {

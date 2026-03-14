@@ -46,7 +46,7 @@ export default function VerifyOTPScreen() {
         if (success) {
             const profile = await getUserProfile();
             if (profile?.isOnboardingCompleted) {
-                router.replace('/home');
+                router.replace('/(tabs)');
             } else {
                 router.replace({
                     pathname: '/(onboarding)/step1',

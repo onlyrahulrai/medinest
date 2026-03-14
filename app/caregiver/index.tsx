@@ -218,7 +218,7 @@ export default function CaregiverDashboard() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity 
-            onPress={() => router.push("/home")} 
+            onPress={() => router.push("/(tabs)")} 
             style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color="#333" />
@@ -392,7 +392,7 @@ export default function CaregiverDashboard() {
               style={styles.navItem}
               onPress={() => {
                 setActiveTab(tab.key);
-                if (tab.key === "Home") router.push("/home");
+                if (tab.key === "Home") router.push("/(tabs)");
                 if (tab.key === "Settings") router.push("/settings");
               }}
               activeOpacity={0.7}

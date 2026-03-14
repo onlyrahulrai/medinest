@@ -12,6 +12,7 @@ export default function Step3Screen() {
     const name = params.name as string;
     const age = params.age as string;
     const gender = params.gender as string;
+    const weight = params.weight as string;
     const conditions = params.conditions as string; // JSON stringified
 
     const [emergencyName, setEmergencyName] = useState('');
@@ -25,6 +26,7 @@ export default function Step3Screen() {
                 name,
                 age,
                 gender,
+                weight,
                 conditions,
                 emergencyName,
                 emergencyPhone,

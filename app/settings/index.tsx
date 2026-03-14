@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { clearAllData, getUserProfile, saveUserProfile, UserProfile } from '../../utils/storage';
 import { useAuth } from '../../hooks/useAuth';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -81,7 +82,7 @@ export default function SettingsScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#333" />
@@ -90,7 +91,12 @@ export default function SettingsScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={true}
+                bounces={true}
+            >
 
                 <Text style={styles.sectionTitle}>Notifications</Text>
                 <View style={styles.card}>
@@ -152,7 +158,7 @@ export default function SettingsScreen() {
                 </View>
 
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -165,12 +171,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 16,
+        paddingTop: 8,
         backgroundColor: 'white',
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
+    },
+    scrollView: {
+        flex: 1,
     },
     headerTitle: {
         fontSize: 18,
@@ -183,8 +192,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     scrollContent: {
+        flexGrow: 1,
         padding: 20,
-        paddingBottom: 40,
+        paddingBottom: 80,
     },
     sectionTitle: {
         fontSize: 14,
