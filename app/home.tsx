@@ -47,13 +47,40 @@ const getGreeting = () => {
 
 // Daily health tips pool
 const HEALTH_TIPS = [
-  { tip: "Stay hydrated! Drink at least 8 glasses of water today.", icon: "water" as const, color: "#0EA5E9" },
+  // 💊 Medication Adherence
   { tip: "Take your medications with food to reduce stomach irritation.", icon: "restaurant" as const, color: "#F59E0B" },
-  { tip: "A 20-minute walk can boost your mood and energy levels.", icon: "walk" as const, color: "#10B981" },
-  { tip: "Set a consistent bedtime to improve medication absorption.", icon: "bed" as const, color: "#8B5CF6" },
-  { tip: "Deep breathing for 5 minutes can lower stress and blood pressure.", icon: "leaf" as const, color: "#059669" },
   { tip: "Avoid caffeine close to your evening medications.", icon: "cafe" as const, color: "#DC2626" },
+  { tip: "Store medications in a cool, dry place away from sunlight.", icon: "shield-checkmark" as const, color: "#7C3AED" },
+  { tip: "Never double up on a missed dose — consult your doctor instead.", icon: "alert-circle" as const, color: "#EF4444" },
+  { tip: "Set phone alarms as a backup for your medication reminders.", icon: "alarm" as const, color: "#F97316" },
+
+  // 💧 Hydration
+  { tip: "Stay hydrated! Drink at least 8 glasses of water today.", icon: "water" as const, color: "#0EA5E9" },
+  { tip: "Drinking water before meals can aid digestion and absorption.", icon: "water" as const, color: "#06B6D4" },
+
+  // 🏃 Exercise & Movement
+  { tip: "A 20-minute walk can boost your mood and energy levels.", icon: "walk" as const, color: "#10B981" },
+  { tip: "Gentle stretching in the morning improves circulation and flexibility.", icon: "body" as const, color: "#14B8A6" },
+  { tip: "Even 10 minutes of light exercise can reduce anxiety significantly.", icon: "fitness" as const, color: "#059669" },
+
+  // 😴 Sleep & Rest
+  { tip: "Avoid screens 30 minutes before bed for better sleep quality.", icon: "moon" as const, color: "#6366F1" },
+  { tip: "Set a consistent bedtime to improve medication absorption.", icon: "bed" as const, color: "#8B5CF6" },
+  { tip: "Quality sleep strengthens your immune system and recovery.", icon: "bed" as const, color: "#4F46E5" },
+
+  // 🥗 Nutrition
+  { tip: "Eating leafy greens daily supports cardiovascular health.", icon: "nutrition" as const, color: "#22C55E" },
+  { tip: "Omega-3 rich foods like fish can reduce inflammation.", icon: "fish" as const, color: "#0EA5E9" },
+  { tip: "Limit processed sugar — it can interfere with some medications.", icon: "ice-cream" as const, color: "#EC4899" },
+
+  // 🧘 Mental Health
+  { tip: "Deep breathing for 5 minutes can lower stress and blood pressure.", icon: "leaf" as const, color: "#059669" },
+  { tip: "Talking to someone you trust can lighten emotional burdens.", icon: "people" as const, color: "#8B5CF6" },
+  { tip: "Practice gratitude — write 3 things you're thankful for today.", icon: "heart" as const, color: "#F43F5E" },
+
+  // 📋 General Wellness
   { tip: "Keep a symptom journal — it helps your doctor help you better.", icon: "journal" as const, color: "#6366F1" },
+  { tip: "Regular health checkups can catch issues before they escalate.", icon: "medkit" as const, color: "#0F766E" },
 ];
 
 const QUICK_ACTIONS = [
@@ -61,7 +88,7 @@ const QUICK_ACTIONS = [
     icon: "add" as const,
     label: "Add Med",
     route: "/medications/add" as const,
-    color: "#059669", 
+    color: "#059669",
     bgColor: "#D1FAE5",
   },
   {
@@ -182,6 +209,7 @@ export default function HomeScreen() {
 
   // Daily health tip (rotates by day of year)
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+
   const todaysTip = HEALTH_TIPS[dayOfYear % HEALTH_TIPS.length];
 
   // Mock weekly adherence data (in a real app, compute from doseHistory)
@@ -383,7 +411,7 @@ export default function HomeScreen() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
-        
+
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={styles.greetingHeader}>
@@ -396,7 +424,7 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.glassOverviewCard}>
             <View style={styles.flex1}>
               <Text style={styles.overviewTitle}>Daily Progress</Text>
@@ -416,62 +444,62 @@ export default function HomeScreen() {
         </View>
       </View>
 
-        <View style={styles.content}>
-          {/* Next Medication Hero Card */}
-          {todaysMedications.length > 0 && (
-            <View style={styles.heroSection}>
-              <Animated.View style={[styles.heroCard, { opacity: nextMedFade, transform: [{ translateY: nextMedSlide }] }]}>
-                {nextMed ? (
-                  <>
-                    <View style={styles.heroCardHeader}>
-                      <View style={styles.heroCardIconContainer}>
-                        {nextMed.medication.imageUrl ? (
-                          <Image source={{ uri: nextMed.medication.imageUrl }} style={styles.medIconImage} />
-                        ) : (
-                          <Ionicons name="medical" size={26} color="#0F766E" />
-                        )}
-                      </View>
-                      <View style={styles.heroCardText}>
-                        <Text style={styles.heroNextLabel}>UPCOMING MEDICATION</Text>
-                        <Text style={styles.heroMedName}>{nextMed.medication.name}</Text>
-                        <Text style={styles.heroMedDosage}>{nextMed.medication.dosage} • {nextMed.time}</Text>
-                      </View>
-                    </View>
-                    
-                    <View style={styles.heroCardFooter}>
-                      <View style={styles.heroCountdown}>
-                        <Ionicons name="time" size={18} color="#0F766E" />
-                        <Text style={styles.heroCountdownText}>In {formatCountdown(nextMed.minutesUntil)}</Text>
-                      </View>
-                      
-                      {!isDoseTaken(nextMed.medication.id) && (
-                        <TouchableOpacity
-                          style={styles.heroTakeBtn}
-                          onPress={() => handleTakeDose(nextMed.medication)}
-                        >
-                          <LinearGradient
-                            colors={["#0F766E", "#047857"]}
-                            style={StyleSheet.absoluteFillObject}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                          />
-                          <Text style={styles.heroTakeText}>Mark Taken</Text>
-                        </TouchableOpacity>
+      <View style={styles.content}>
+        {/* Next Medication Hero Card */}
+        {todaysMedications.length > 0 && (
+          <View style={styles.heroSection}>
+            <Animated.View style={[styles.heroCard, { opacity: nextMedFade, transform: [{ translateY: nextMedSlide }] }]}>
+              {nextMed ? (
+                <>
+                  <View style={styles.heroCardHeader}>
+                    <View style={styles.heroCardIconContainer}>
+                      {nextMed.medication.imageUrl ? (
+                        <Image source={{ uri: nextMed.medication.imageUrl }} style={styles.medIconImage} />
+                      ) : (
+                        <Ionicons name="medical" size={26} color="#0F766E" />
                       )}
                     </View>
-                  </>
-                ) : (
-                  <View style={styles.heroAllDone}>
-                    <Ionicons name="checkmark-circle" size={48} color="#10B981" />
-                    <View style={styles.heroAllDoneTextOverlay}>
-                      <Text style={styles.heroAllDoneTitle}>All caught up!</Text>
-                      <Text style={styles.heroAllDoneSubtitle}>You have taken all medications for today.</Text>
+                    <View style={styles.heroCardText}>
+                      <Text style={styles.heroNextLabel}>UPCOMING MEDICATION</Text>
+                      <Text style={styles.heroMedName}>{nextMed.medication.name}</Text>
+                      <Text style={styles.heroMedDosage}>{nextMed.medication.dosage} • {nextMed.time}</Text>
                     </View>
                   </View>
-                )}
-              </Animated.View>
-            </View>
-          )}
+
+                  <View style={styles.heroCardFooter}>
+                    <View style={styles.heroCountdown}>
+                      <Ionicons name="time" size={18} color="#0F766E" />
+                      <Text style={styles.heroCountdownText}>In {formatCountdown(nextMed.minutesUntil)}</Text>
+                    </View>
+
+                    {!isDoseTaken(nextMed.medication.id) && (
+                      <TouchableOpacity
+                        style={styles.heroTakeBtn}
+                        onPress={() => handleTakeDose(nextMed.medication)}
+                      >
+                        <LinearGradient
+                          colors={["#0F766E", "#047857"]}
+                          style={StyleSheet.absoluteFillObject}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.heroTakeText}>Mark Taken</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </>
+              ) : (
+                <View style={styles.heroAllDone}>
+                  <Ionicons name="checkmark-circle" size={48} color="#10B981" />
+                  <View style={styles.heroAllDoneTextOverlay}>
+                    <Text style={styles.heroAllDoneTitle}>All caught up!</Text>
+                    <Text style={styles.heroAllDoneSubtitle}>You have taken all medications for today.</Text>
+                  </View>
+                </View>
+              )}
+            </Animated.View>
+          </View>
+        )}
 
         {/* Adherence Streak & Weekly Chart */}
         <Animated.View style={{ opacity: streakAnim }}>
@@ -522,103 +550,103 @@ export default function HomeScreen() {
 
         {/* Today's Schedule Options */}
         <Animated.View style={{ opacity: scheduleAnim }}>
-        <View style={styles.scheduleSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionPremiumTitle}>Today's Schedule</Text>
-            <Link href="/calendar" asChild>
-              <TouchableOpacity>
-                <Text style={styles.seeAllButton}>History</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
+          <View style={styles.scheduleSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionPremiumTitle}>Today's Schedule</Text>
+              <Link href="/calendar" asChild>
+                <TouchableOpacity>
+                  <Text style={styles.seeAllButton}>History</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
 
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search medications..."
-              placeholderTextColor="#999"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <Ionicons name="close-circle" size={20} color="#999" />
-              </TouchableOpacity>
-            )}
-          </View>
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search medications..."
+                placeholderTextColor="#999"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery("")}>
+                  <Ionicons name="close-circle" size={20} color="#999" />
+                </TouchableOpacity>
+              )}
+            </View>
 
-          {(() => {
-            const filteredMeds = todaysMedications.filter(med => 
-              med.name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-
-            if (todaysMedications.length === 0) {
-              return (
-                <View style={styles.emptyState}>
-                  <Ionicons name="calendar-clear-outline" size={60} color="#CBD5E1" />
-                  <Text style={styles.emptyStateTitle}>No Medications Today</Text>
-                  <Text style={styles.emptyStateSub}>Take a break! You have nothing scheduled.</Text>
-                </View>
+            {(() => {
+              const filteredMeds = todaysMedications.filter(med =>
+                med.name.toLowerCase().includes(searchQuery.toLowerCase())
               );
-            }
 
-            if (filteredMeds.length === 0) {
+              if (todaysMedications.length === 0) {
+                return (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="calendar-clear-outline" size={60} color="#CBD5E1" />
+                    <Text style={styles.emptyStateTitle}>No Medications Today</Text>
+                    <Text style={styles.emptyStateSub}>Take a break! You have nothing scheduled.</Text>
+                  </View>
+                );
+              }
+
+              if (filteredMeds.length === 0) {
+                return (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="search-outline" size={48} color="#CBD5E1" />
+                    <Text style={styles.emptyStateTitle}>
+                      No medications match "{searchQuery}"
+                    </Text>
+                  </View>
+                );
+              }
+
               return (
-                <View style={styles.emptyState}>
-                  <Ionicons name="search-outline" size={48} color="#CBD5E1" />
-                  <Text style={styles.emptyStateTitle}>
-                    No medications match "{searchQuery}"
-                  </Text>
-                </View>
-              );
-            }
-
-            return (
-              <View style={styles.timelineContainer}>
-                {filteredMeds.map((medication, index) => {
-                  const isTaken = isDoseTaken(medication.id);
-                  return (
-                    <View key={medication.id} style={styles.timelineRow}>
-                      {/* Subtly dashed vertical timeline track */}
-                      <View style={styles.timelineTrack}>
-                        <View style={[styles.timelineDot, isTaken && styles.timelineDotTaken]} />
-                        {index !== filteredMeds.length - 1 && <View style={styles.timelineLine} />}
-                      </View>
-                      
-                      {/* The Medication Info Card */}
-                      <View style={[styles.premiumDoseCard, isTaken && styles.premiumDoseCardTaken]}>
-                        <View style={styles.doseInfo}>
-                          <Text style={[styles.premiumMedicineName, isTaken && styles.premiumTextTaken]}>
-                            {medication.name}
-                          </Text>
-                          <Text style={styles.premiumDosageInfo}>
-                            {medication.dosage} • {medication.times[0]}
-                          </Text>
+                <View style={styles.timelineContainer}>
+                  {filteredMeds.map((medication, index) => {
+                    const isTaken = isDoseTaken(medication.id);
+                    return (
+                      <View key={medication.id} style={styles.timelineRow}>
+                        {/* Subtly dashed vertical timeline track */}
+                        <View style={styles.timelineTrack}>
+                          <View style={[styles.timelineDot, isTaken && styles.timelineDotTaken]} />
+                          {index !== filteredMeds.length - 1 && <View style={styles.timelineLine} />}
                         </View>
-                        
-                        {isTaken ? (
-                          <View style={styles.takenBadge}>
-                            <Ionicons name="checkmark" size={16} color="#0F766E" />
-                            <Text style={styles.takenBadgeText}>Taken</Text>
+
+                        {/* The Medication Info Card */}
+                        <View style={[styles.premiumDoseCard, isTaken && styles.premiumDoseCardTaken]}>
+                          <View style={styles.doseInfo}>
+                            <Text style={[styles.premiumMedicineName, isTaken && styles.premiumTextTaken]}>
+                              {medication.name}
+                            </Text>
+                            <Text style={styles.premiumDosageInfo}>
+                              {medication.dosage} • {medication.times[0]}
+                            </Text>
                           </View>
-                        ) : (
-                          <TouchableOpacity
-                            style={styles.premiumTakeBtn}
-                            onPress={() => handleTakeDose(medication)}
-                          >
-                            <Text style={styles.premiumTakeBtnText}>Take</Text>
-                          </TouchableOpacity>
-                        )}
+
+                          {isTaken ? (
+                            <View style={styles.takenBadge}>
+                              <Ionicons name="checkmark" size={16} color="#0F766E" />
+                              <Text style={styles.takenBadgeText}>Taken</Text>
+                            </View>
+                          ) : (
+                            <TouchableOpacity
+                              style={styles.premiumTakeBtn}
+                              onPress={() => handleTakeDose(medication)}
+                            >
+                              <Text style={styles.premiumTakeBtnText}>Take</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
                       </View>
-                    </View>
-                  );
-                })}
-              </View>
-            );
-          })()}
-        </View>
+                    );
+                  })}
+                </View>
+              );
+            })()}
+          </View>
         </Animated.View>
 
         {/* Daily Health Tip */}
