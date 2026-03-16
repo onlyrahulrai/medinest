@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { clearAllData, getUserProfile, saveUserProfile, UserProfile } from '../../utils/storage';
 import { useAuth } from '../../hooks/useAuth';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -82,14 +83,20 @@ export default function SettingsScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Settings</Text>
-                <View style={{ width: 40 }} />
-            </View>
+        <View style={styles.container}>
+            <StatusBar style="light" />
+            <LinearGradient
+                colors={["#065F46", "#064E3B"]}
+                style={styles.header}
+            >
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Settings</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+            </LinearGradient>
 
             <ScrollView 
                 style={styles.scrollView}
@@ -158,7 +165,7 @@ export default function SettingsScreen() {
                 </View>
 
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -168,23 +175,25 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f9fa',
     },
     header: {
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        paddingHorizontal: 20,
+        paddingBottom: 30,
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+    },
+    headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 16,
-        paddingTop: 8,
-        backgroundColor: 'white',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
     },
     scrollView: {
         flex: 1,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: 20,
+        fontWeight: '800',
+        color: 'white',
+        letterSpacing: -0.5,
     },
     backButton: {
         width: 40,
