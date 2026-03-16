@@ -127,6 +127,29 @@ export default function AddMedicationScreen() {
   const [managedPatients, setManagedPatients] = useState<ManagedPatient[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
+  const THEMES = {
+    self: {
+      primary: "#065F46",
+      secondary: "#064E3B",
+      accent: "#059669",
+      lightAccent: "#D1FAE5",
+      headerColors: ["#065F46", "#064E3B"] as const,
+      icon: "heart" as const,
+      label: "Personal Health Profile"
+    },
+    other: {
+      primary: "#1E40AF",
+      secondary: "#1E3A8A",
+      accent: "#2563EB",
+      lightAccent: "#DBEAFE",
+      headerColors: ["#1E40AF", "#1E3A8A"] as const,
+      icon: "people-outline" as const,
+      label: "Managed Patient"
+    }
+  };
+
+  const theme = form.ownerId === "self" ? THEMES.self : THEMES.other;
+
   const getPatientName = () => {
     if (form.ownerId === "self") return userProfile?.name || "Me";
     const patient = managedPatients.find(p => p.id === form.ownerId);
@@ -214,7 +237,7 @@ export default function AddMedicationScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
+  const handleSubmit = async () => {
     try {
       if (!validateForm()) {
         Alert.alert("Error", "Please fill in all required fields correctly");
@@ -372,7 +395,7 @@ export default function AddMedicationScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#065F46", "#064E3B"]}
+        colors={theme.headerColors}
         style={styles.headerGradient}
       >
         <View style={styles.header}>
@@ -383,7 +406,7 @@ export default function AddMedicationScreen() {
             <Ionicons name="chevron-back" size={24} color="white" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {form.ownerId === "self" ? "Your Schedule" : `For ${getPatientName()}`}
+            {form.ownerId === "self" ? "Your Schedule" : `${getPatientName()}'s Plan`}
           </Text>
           <View style={{ width: 44 }} />
         </View>
@@ -396,26 +419,24 @@ export default function AddMedicationScreen() {
           contentContainerStyle={styles.formContentContainer}
         >
           {/* Patient Info Card (Always shown for context) */}
-          <View style={styles.patientInfoCard}>
+          <View style={[styles.patientInfoCard, { borderColor: theme.lightAccent }]}>
             <View style={styles.patientInfoAvatarContainer}>
               {getPatientAvatar() ? (
                 <Image source={{ uri: getPatientAvatar() }} style={styles.patientInfoAvatar} />
               ) : (
-                <View style={[styles.patientInfoAvatar, styles.patientInfoAvatarPlaceholder]}>
-                  <Text style={styles.patientInfoAvatarText}>{getPatientName().charAt(0)}</Text>
+                <View style={[styles.patientInfoAvatar, { backgroundColor: theme.lightAccent }]}>
+                  <Text style={[styles.patientInfoAvatarText, { color: theme.primary }]}>{getPatientName().charAt(0)}</Text>
                 </View>
               )}
             </View>
             <View style={styles.patientInfoContent}>
               <Text style={styles.patientInfoName}>{getPatientName()}</Text>
-              <Text style={styles.patientInfoRole}>
-                {form.ownerId === "self" ? "Personal Health Profile" : "Managed Patient"}
-              </Text>
+              <Text style={styles.patientInfoRole}>{theme.label}</Text>
             </View>
             <Ionicons 
-              name={form.ownerId === "self" ? "heart-outline" : "person-circle-outline"} 
+              name={form.ownerId === "self" ? "heart" : "person-circle"} 
               size={24} 
-              color="#059669" 
+              color={theme.accent} 
             />
           </View>
 
@@ -424,36 +445,55 @@ export default function AddMedicationScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Who is this for?</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.patientSelector} contentContainerStyle={{ paddingBottom: 5 }}>
-                <TouchableOpacity 
-                  style={[styles.patientChip, form.ownerId === "self" && styles.patientChipActive]}
+                <TouchableOpacity
+                  key="self"
+                  style={[
+                    styles.patientChip,
+                    form.ownerId === "self" && { backgroundColor: theme.accent, borderColor: theme.accent },
+                  ]}
                   onPress={() => setForm({ ...form, ownerId: "self" })}
                 >
                   <View style={styles.patientChipContent}>
-                    <View style={[styles.patientAvatarMini, form.ownerId === "self" && styles.patientAvatarMiniActive]}>
-                      <Ionicons name="person" size={14} color={form.ownerId === "self" ? "#059669" : "#666"} />
+                    <View style={[styles.patientAvatarMini, { backgroundColor: form.ownerId === "self" ? "rgba(255,255,255,0.2)" : theme.lightAccent }]}>
+                      <Ionicons name="person" size={12} color={form.ownerId === "self" ? "white" : theme.accent} />
                     </View>
-                    <Text style={[styles.patientChipText, form.ownerId === "self" && styles.patientChipTextActive]}>Me</Text>
+                    <Text
+                      style={[
+                        styles.patientChipText,
+                        form.ownerId === "self" && styles.patientChipTextActive,
+                      ]}
+                    >
+                      Me
+                    </Text>
                   </View>
                 </TouchableOpacity>
-                {managedPatients.map(patient => (
-                  <TouchableOpacity 
+                {managedPatients.map((patient) => (
+                  <TouchableOpacity
                     key={patient.id}
-                    style={[styles.patientChip, form.ownerId === patient.id && styles.patientChipActive]}
+                    style={[
+                      styles.patientChip,
+                      form.ownerId === patient.id && { backgroundColor: theme.accent, borderColor: theme.accent },
+                    ]}
                     onPress={() => setForm({ ...form, ownerId: patient.id })}
                   >
                     <View style={styles.patientChipContent}>
                       {patient.image ? (
                         <Image source={{ uri: patient.image }} style={styles.patientAvatarMini} />
                       ) : (
-                        <View style={[styles.patientAvatarMini, form.ownerId === patient.id && styles.patientAvatarMiniActive]}>
-                          <Text style={[styles.patientAvatarMiniText, form.ownerId === patient.id && styles.patientAvatarMiniTextActive]}>
+                        <View style={[styles.patientAvatarMini, { backgroundColor: form.ownerId === patient.id ? "rgba(255,255,255,0.2)" : theme.lightAccent }]}>
+                          <Text style={[styles.patientAvatarMiniText, { color: form.ownerId === patient.id ? "white" : theme.accent }]}>
                             {patient.name.charAt(0)}
                           </Text>
                         </View>
                       )}
-                      <Text style={[styles.patientChipText, form.ownerId === patient.id && styles.patientChipTextActive]}>
-                        {patient.name}
-                      </Text>
+                        <Text
+                          style={[
+                            styles.patientChipText,
+                            form.ownerId === patient.id && styles.patientChipTextActive,
+                          ]}
+                        >
+                          {patient.name}
+                        </Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -468,7 +508,7 @@ export default function AddMedicationScreen() {
                 <Image source={{ uri: form.imageUri }} style={styles.medicationImage} />
               ) : (
                 <View style={styles.imagePlaceholder}>
-                  <Ionicons name="camera-outline" size={40} color="#059669" />
+                  <Ionicons name="camera-outline" size={40} color={theme.accent} />
                   <Text style={styles.imagePlaceholderText}>Add Photo</Text>
                 </View>
               )}
@@ -520,7 +560,7 @@ export default function AddMedicationScreen() {
                   key={unit}
                   style={[
                     styles.unitChip,
-                    form.dosageUnit === unit && styles.unitChipActive,
+                    form.dosageUnit === unit && { backgroundColor: theme.accent, borderColor: theme.accent },
                   ]}
                   onPress={() => setForm({ ...form, dosageUnit: unit })}
                 >
@@ -543,8 +583,8 @@ export default function AddMedicationScreen() {
           {/* Medication Type */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="medkit-outline" size={18} color="#059669" />{" "}
-              Medication Type
+              <Ionicons name="medkit-outline" size={18} color={theme.accent} />{" "}
+              Basic Information
             </Text>
             <View style={styles.typeGrid}>
               {MEDICATION_TYPES.map((medType) => (
@@ -552,27 +592,27 @@ export default function AddMedicationScreen() {
                   key={medType.id}
                   style={[
                     styles.typeChip,
-                    form.type === medType.label && styles.typeChipActive,
+                    form.type === medType.label && { backgroundColor: theme.accent, borderColor: theme.accent },
                   ]}
                   onPress={() => setForm({ ...form, type: medType.label })}
                 >
                   <View
                     style={[
                       styles.typeIconContainer,
-                      form.type === medType.label && styles.typeIconContainerActive,
+                      form.type === medType.label && {backgroundColor: theme.accent},
                     ]}
                   >
                     <Ionicons
                       name={medType.icon}
                       size={20}
-                      color={form.type === medType.label ? "white" : "#059669"}
+                      color={form.type === medType.label ? "white" : theme.accent}
                     />
                   </View>
                   <Text
                     style={[
                       styles.typeChipLabel,
-                      form.type === medType.label && styles.typeChipLabelActive,
-                    ]}
+                    form.type === medType.label && { color: "white" },
+                  ]}
                   >
                     {medType.label}
                   </Text>
@@ -584,7 +624,7 @@ export default function AddMedicationScreen() {
           {/* Medicine Color */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="color-palette-outline" size={18} color="#059669" />{" "}
+              <Ionicons name="color-palette-outline" size={18} color={theme.accent} />{" "}
               Medicine Color
             </Text>
             <View style={styles.colorGrid}>
@@ -609,7 +649,7 @@ export default function AddMedicationScreen() {
           {/* Meal Timing */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="restaurant-outline" size={18} color="#059669" />{" "}
+              <Ionicons name="restaurant-outline" size={18} color={theme.accent} />{" "}
               When to Take
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mealTimingScroller}>
@@ -618,7 +658,7 @@ export default function AddMedicationScreen() {
                   key={timing.id}
                   style={[
                     styles.mealChip,
-                    form.mealTiming.includes(timing.label) && styles.mealChipActive,
+                    form.mealTiming.includes(timing.label) && { backgroundColor: theme.accent, borderColor: theme.accent },
                   ]}
                   onPress={() => {
                     const newTimings = form.mealTiming.includes(timing.label)
@@ -630,19 +670,19 @@ export default function AddMedicationScreen() {
                   <View
                     style={[
                       styles.mealChipIcon,
-                      form.mealTiming.includes(timing.label) && styles.mealChipIconActive,
+                      form.mealTiming.includes(timing.label) && {backgroundColor: theme.accent},
                     ]}
                   >
                     <Ionicons
                       name={timing.icon}
                       size={20}
-                      color={form.mealTiming.includes(timing.label) ? "white" : "#059669"}
+                      color={form.mealTiming.includes(timing.label) ? "white" : theme.accent}
                     />
                   </View>
                   <Text
                     style={[
                       styles.mealChipText,
-                      form.mealTiming.includes(timing.label) && styles.mealChipTextActive,
+                      form.mealTiming.includes(timing.label) && { color: "white" },
                     ]}
                   >
                     {timing.label}
@@ -671,7 +711,7 @@ export default function AddMedicationScreen() {
               onPress={() => setShowDatePicker(true)}
             >
               <View style={styles.dateIconContainer}>
-                <Ionicons name="calendar" size={20} color="#059669" />
+                <Ionicons name="calendar" size={20} color={theme.accent} />
               </View>
               <Text style={styles.dateButtonText}>
                 Starts {form.startDate.toLocaleDateString()}
@@ -702,7 +742,7 @@ export default function AddMedicationScreen() {
                     }}
                   >
                     <View style={styles.timeIconContainer}>
-                      <Ionicons name="time-outline" size={20} color="#059669" />
+                      <Ionicons name="time-outline" size={20} color={theme.accent} />
                     </View>
                     <Text style={styles.timeButtonText}>{time}</Text>
                     <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -744,7 +784,7 @@ export default function AddMedicationScreen() {
               <View style={styles.switchRow}>
                 <View style={styles.switchLabelContainer}>
                   <View style={styles.iconContainer}>
-                    <Ionicons name="notifications" size={20} color="#059669" />
+                    <Ionicons name="notifications" size={20} color={theme.accent} />
                   </View>
                   <View>
                     <Text style={styles.switchLabel}>Reminders</Text>
@@ -758,7 +798,7 @@ export default function AddMedicationScreen() {
                   onValueChange={(value) =>
                     setForm({ ...form, reminderEnabled: value })
                   }
-                  trackColor={{ false: "#ddd", true: "#059669" }}
+                  trackColor={{ false: "#ddd", true: theme.accent }}
                   thumbColor="white"
                 />
               </View>
@@ -771,7 +811,7 @@ export default function AddMedicationScreen() {
               <View style={styles.switchRow}>
                 <View style={styles.switchLabelContainer}>
                   <View style={styles.iconContainer}>
-                    <Ionicons name="reload" size={20} color="#059669" />
+                    <Ionicons name="reload" size={20} color={theme.accent} />
                   </View>
                   <View>
                     <Text style={styles.switchLabel}>Refill Tracking</Text>
@@ -792,7 +832,7 @@ export default function AddMedicationScreen() {
                       });
                     }
                   }}
-                  trackColor={{ false: "#ddd", true: "#059669" }}
+                  trackColor={{ false: "#ddd", true: theme.accent }}
                   thumbColor="white"
                 />
               </View>
@@ -852,7 +892,7 @@ export default function AddMedicationScreen() {
           {/* Additional Details */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="medical-outline" size={18} color="#059669" />{" "}
+              <Ionicons name="medical-outline" size={18} color={theme.accent} />{" "}
               Additional Details
             </Text>
             <View style={styles.inputContainer}>
@@ -902,11 +942,11 @@ export default function AddMedicationScreen() {
               styles.saveButton,
               isSubmitting && styles.saveButtonDisabled,
             ]}
-            onPress={handleSave}
+            onPress={handleSubmit}
             disabled={isSubmitting}
           >
             <LinearGradient
-              colors={["#059669", "#064E3B"]}
+              colors={theme.headerColors}
               style={styles.saveButtonGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}

@@ -158,6 +158,29 @@ export default function EditMedicationScreen() {
     return patient?.image;
   };
 
+  const THEMES = {
+    self: {
+      primary: "#065F46",
+      secondary: "#064E3B",
+      accent: "#059669",
+      lightAccent: "#D1FAE5",
+      headerColors: ["#065F46", "#064E3B"] as const,
+      icon: "heart" as const,
+      label: "Personal Health Profile"
+    },
+    other: {
+      primary: "#1E40AF",
+      secondary: "#1E3A8A",
+      accent: "#2563EB",
+      lightAccent: "#DBEAFE",
+      headerColors: ["#1E40AF", "#1E3A8A"] as const,
+      icon: "people-outline" as const,
+      label: "Managed Patient"
+    }
+  };
+
+  const theme = form.ownerId === "self" ? THEMES.self : THEMES.other;
+
   useEffect(() => {
     const loadData = async () => {
       const profile = await getUserProfile();
@@ -290,13 +313,13 @@ export default function EditMedicationScreen() {
             <View
               style={[
                 styles.optionIcon,
-                selectedFrequency === freq.label && styles.selectedOptionIcon,
+                selectedFrequency === freq.label && { backgroundColor: theme.lightAccent },
               ]}
             >
               <Ionicons
                 name={freq.icon}
                 size={24}
-                color={selectedFrequency === freq.label ? "white" : "#666"}
+                color={selectedFrequency === freq.label ? "white" : theme.accent}
               />
             </View>
             <Text
@@ -321,7 +344,7 @@ export default function EditMedicationScreen() {
             key={dur.id}
             style={[
               styles.optionCard,
-              selectedDuration === dur.label && styles.selectedOptionCard,
+              selectedDuration === dur.label && { backgroundColor: theme.accent, borderColor: theme.accent },
             ]}
             onPress={() => {
               setSelectedDuration(dur.label);
@@ -331,7 +354,7 @@ export default function EditMedicationScreen() {
             <Text
               style={[
                 styles.durationNumber,
-                selectedDuration === dur.label && styles.selectedDurationNumber,
+                selectedDuration === dur.label ? { color: "white" } : { color: theme.accent },
               ]}
             >
               {dur.value > 0 ? dur.value : "∞"}
@@ -339,7 +362,7 @@ export default function EditMedicationScreen() {
             <Text
               style={[
                 styles.optionLabel,
-                selectedDuration === dur.label && styles.selectedOptionLabel,
+                selectedDuration === dur.label && { color: "white" },
               ]}
             >
               {dur.label}
@@ -353,7 +376,7 @@ export default function EditMedicationScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#065F46", "#064E3B"]}
+        colors={theme.headerColors}
         style={styles.headerGradient}
       >
         <View style={styles.header}>
@@ -382,8 +405,8 @@ export default function EditMedicationScreen() {
               {getPatientAvatar() ? (
                 <Image source={{ uri: getPatientAvatar() }} style={styles.patientInfoAvatar} />
               ) : (
-                <View style={[styles.patientInfoAvatar, styles.patientInfoAvatarPlaceholder]}>
-                  <Text style={styles.patientInfoAvatarText}>{getPatientName().charAt(0)}</Text>
+                <View style={[styles.patientInfoAvatar, styles.patientInfoAvatarPlaceholder, { backgroundColor: theme.lightAccent }]}>
+                  <Text style={[styles.patientInfoAvatarText, { color: theme.accent }]}>{getPatientName().charAt(0)}</Text>
                 </View>
               )}
             </View>
@@ -396,7 +419,7 @@ export default function EditMedicationScreen() {
             <Ionicons 
               name={form.ownerId === "self" ? "heart-outline" : "person-circle-outline"} 
               size={24} 
-              color="#059669" 
+              color={theme.accent} 
             />
           </View>
 
@@ -430,10 +453,13 @@ export default function EditMedicationScreen() {
               {DOSAGE_UNITS.map((unit) => (
                 <TouchableOpacity
                   key={unit}
-                  style={[styles.unitChip, form.dosageUnit === unit && styles.unitChipActive]}
+                  style={[
+                    styles.unitChip,
+                    form.dosageUnit === unit && { backgroundColor: theme.accent, borderColor: theme.accent },
+                  ]}
                   onPress={() => setForm({ ...form, dosageUnit: unit })}
                 >
-                  <Text style={[styles.unitChipText, form.dosageUnit === unit && styles.unitChipTextActive]}>
+                  <Text style={[styles.unitChipText, form.dosageUnit === unit && { color: "white" }]}>
                     {unit}
                   </Text>
                 </TouchableOpacity>
@@ -444,19 +470,19 @@ export default function EditMedicationScreen() {
           {/* Medication Type */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="medkit-outline" size={18} color="#059669" />{" "}Medication Type
+              <Ionicons name="medkit-outline" size={18} color={theme.accent} />{" "}Medication Type
             </Text>
             <View style={styles.typeGrid}>
               {MEDICATION_TYPES.map((medType) => (
                 <TouchableOpacity
                   key={medType.id}
-                  style={[styles.typeChip, form.type === medType.label && styles.typeChipActive]}
+                  style={[styles.typeChip, form.type === medType.label && { backgroundColor: theme.accent, borderColor: theme.accent }]}
                   onPress={() => setForm({ ...form, type: medType.label })}
                 >
-                  <View style={[styles.typeIconContainer, form.type === medType.label && styles.typeIconContainerActive]}>
-                    <Ionicons name={medType.icon} size={20} color={form.type === medType.label ? "white" : "#059669"} />
+                  <View style={[styles.typeIconContainer, form.type === medType.label && { backgroundColor: theme.lightAccent }]}>
+                    <Ionicons name={medType.icon} size={20} color={form.type === medType.label ? "white" : theme.accent} />
                   </View>
-                  <Text style={[styles.typeChipLabel, form.type === medType.label && styles.typeChipLabelActive]}>
+                  <Text style={[styles.typeChipLabel, form.type === medType.label && { color: "white" }]}>
                     {medType.label}
                   </Text>
                 </TouchableOpacity>
@@ -467,7 +493,7 @@ export default function EditMedicationScreen() {
           {/* Medicine Color */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="color-palette-outline" size={18} color="#059669" />{" "}Medicine Color
+              <Ionicons name="color-palette-outline" size={18} color={theme.accent} />{" "}Medicine Color
             </Text>
             <View style={styles.colorGrid}>
               {MEDICINE_COLORS.map((color) => (
@@ -485,13 +511,13 @@ export default function EditMedicationScreen() {
           {/* Meal Timing */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="restaurant-outline" size={18} color="#059669" />{" "}When to Take
+              <Ionicons name="restaurant-outline" size={18} color={theme.accent} />{" "}When to Take
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mealTimingScroller}>
               {MEAL_TIMINGS.map((timing) => (
                 <TouchableOpacity
                   key={timing.id}
-                  style={[styles.mealChip, form.mealTiming.includes(timing.label) && styles.mealChipActive]}
+                  style={[styles.mealChip, form.mealTiming.includes(timing.label) && { backgroundColor: theme.accent, borderColor: theme.accent }]}
                   onPress={() => {
                     const newTimings = form.mealTiming.includes(timing.label)
                       ? form.mealTiming.filter(t => t !== timing.label)
@@ -499,10 +525,10 @@ export default function EditMedicationScreen() {
                     setForm({ ...form, mealTiming: newTimings });
                   }}
                 >
-                  <View style={[styles.mealChipIcon, form.mealTiming.includes(timing.label) && styles.mealChipIconActive]}>
-                    <Ionicons name={timing.icon} size={20} color={form.mealTiming.includes(timing.label) ? "white" : "#059669"} />
+                  <View style={[styles.mealChipIcon, form.mealTiming.includes(timing.label) && { backgroundColor: theme.lightAccent }]}>
+                    <Ionicons name={timing.icon} size={20} color={form.mealTiming.includes(timing.label) ? "white" : theme.accent} />
                   </View>
-                  <Text style={[styles.mealChipText, form.mealTiming.includes(timing.label) && styles.mealChipTextActive]}>
+                  <Text style={[styles.mealChipText, form.mealTiming.includes(timing.label) && { color: "white" }]}>
                     {timing.label}
                   </Text>
                 </TouchableOpacity>
@@ -522,8 +548,8 @@ export default function EditMedicationScreen() {
               style={styles.dateButton}
               onPress={() => setShowDatePicker(true)}
             >
-              <View style={styles.dateIconContainer}>
-                <Ionicons name="calendar" size={20} color="#059669" />
+              <View style={[styles.dateIconContainer, { backgroundColor: theme.lightAccent }]}>
+                <Ionicons name="calendar" size={20} color={theme.accent} />
               </View>
               <Text style={styles.dateButtonText}>
                 Starts {form.startDate.toLocaleDateString()}
@@ -533,7 +559,12 @@ export default function EditMedicationScreen() {
 
             {showDatePicker && (
               <DateTimePicker
-                value={form.startDate}
+                value={(() => {
+                  const [hours, minutes] = form.times[0].split(":").map(Number);
+                  const date = new Date();
+                  date.setHours(hours, minutes, 0, 0);
+                  return date;
+                })()}
                 mode="date"
                 onChange={(event, date) => {
                   setShowDatePicker(false);
@@ -551,8 +582,8 @@ export default function EditMedicationScreen() {
                     style={styles.timeButton}
                     onPress={() => setShowTimePicker(true)}
                   >
-                    <View style={styles.timeIconContainer}>
-                      <Ionicons name="time-outline" size={20} color="#059669" />
+                    <View style={[styles.timeIconContainer, { backgroundColor: theme.lightAccent }]}>
+                      <Ionicons name="time-outline" size={20} color={theme.accent} />
                     </View>
                     <Text style={styles.timeButtonText}>{time}</Text>
                     <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -593,8 +624,8 @@ export default function EditMedicationScreen() {
             <View style={styles.card}>
               <View style={styles.switchRow}>
                 <View style={styles.switchLabelContainer}>
-                  <View style={styles.iconContainer}>
-                    <Ionicons name="reload" size={20} color="#059669" />
+                  <View style={[styles.iconContainer, { backgroundColor: theme.lightAccent }]}>
+                    <Ionicons name="notifications" size={20} color={theme.accent} />
                   </View>
                   <View>
                     <Text style={styles.switchLabel}>Refill Tracking</Text>
@@ -608,7 +639,7 @@ export default function EditMedicationScreen() {
                   onValueChange={(value) =>
                     setForm({ ...form, refillReminder: value })
                   }
-                  trackColor={{ false: "#ddd", true: "#059669" }}
+                  trackColor={{ false: "#ddd", true: theme.accent }}
                   thumbColor="white"
                 />
               </View>
@@ -619,6 +650,7 @@ export default function EditMedicationScreen() {
                       <TextInput
                         style={styles.input}
                         placeholder="Current Supply"
+                        placeholderTextColor="#999"
                         value={form.currentSupply}
                         onChangeText={(text) =>
                           setForm({ ...form, currentSupply: text })
@@ -630,6 +662,7 @@ export default function EditMedicationScreen() {
                       <TextInput
                         style={styles.input}
                         placeholder="Alert at"
+                        placeholderTextColor="#999"
                         value={form.refillAt}
                         onChangeText={(text) =>
                           setForm({ ...form, refillAt: text })
@@ -646,7 +679,8 @@ export default function EditMedicationScreen() {
           {/* Additional Details */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="medical-outline" size={18} color="#059669" />{" "}Additional Details
+              <Ionicons name="medical-outline" size={18} color={theme.accent} />{" "}
+              Additional Details
             </Text>
             <View style={styles.inputContainer}>
               <TextInput
@@ -694,13 +728,13 @@ export default function EditMedicationScreen() {
             disabled={isSubmitting}
           >
             <LinearGradient
-              colors={["#059669", "#064E3B"]}
+              colors={theme.headerColors}
               style={styles.saveButtonGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
               <Text style={styles.saveButtonText}>
-                {isSubmitting ? "Saving..." : "Save Changes"}
+                {isSubmitting ? "Updating..." : "Update Medication"}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
