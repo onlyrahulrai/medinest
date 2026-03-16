@@ -10,7 +10,8 @@ import {
   Platform,
   Modal,
   TextInput,
-  Alert
+  Alert,
+  StatusBar
 } from 'react-native';
 import { saveUserProfile } from '../../utils/storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,7 +70,7 @@ const ActivityCard = ({
   );
 };
 
-const ProgressRing = ({ progress, size = 160, strokeWidth = 14, color = "#10B981" }: { progress: number; size?: number; strokeWidth?: number; color?: string }) => {
+const ProgressRing = ({ progress, size = width * 0.4, strokeWidth = 14, color = "#10B981" }: { progress: number; size?: number; strokeWidth?: number; color?: string }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const animatedValue = useRef(new Animated.Value(0)).current;
@@ -396,10 +397,10 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 520, // Increased to cover glass cards
+    height: Platform.OS === 'ios' ? 520 : 480, // Slightly more compact on Android
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: Platform.OS === 'ios' ? 60 : (StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 40),
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
@@ -420,7 +421,6 @@ const styles = StyleSheet.create({
   },
   glassOverviewCard: {
     backgroundColor: "rgba(255,255,255,0.15)",
-    borderWidth: 1,
     borderColor: "rgba(255,255,255,0.25)",
     borderRadius: 32,
     padding: 32,
@@ -429,7 +429,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
-    elevation: 8,
+    elevation: Platform.OS === 'android' ? 0 : 8, // Set to 0 on Android because background is dark and elevation creates a black halo
+    borderWidth: Platform.OS === 'android' ? 1.5 : 1, // Thicker border on Android to compensate for lack of shadow
   },
   ringTextContainer: {
     position: 'absolute',
@@ -440,6 +441,9 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '900',
     color: 'white',
+    // Center text vertically on Android
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   ringLabel: {
     fontSize: 12,
@@ -476,7 +480,6 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: 24,
-    // marginBottom: 24,
     marginTop: 24,
   },
   sectionTitle: {
@@ -497,11 +500,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    elevation: 3,
+    elevation: Platform.OS === 'android' ? 2 : 3,
   },
   cardGradient: {
     padding: 20,
-    height: 160,
+    minHeight: 160,
     justifyContent: 'space-between',
   },
   cardHeader: {
