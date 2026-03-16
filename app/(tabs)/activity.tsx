@@ -184,10 +184,15 @@ export default function ActivityScreen() {
   return (
     <View style={styles.container}>
       {/* Static Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={["#0F766E", "#115E59"]}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
         <Text style={styles.headerTitle}>Daily Activity</Text>
         <Text style={styles.headerSubtitle}>Keep pushing your limits!</Text>
-      </View>
+      </LinearGradient>
  
       <ScrollView 
         style={styles.scrollView} 
@@ -390,21 +395,24 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingHorizontal: 24,
-    marginBottom: 24,
+    paddingBottom: 40,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#0F172A',
+    color: 'white',
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#64748B',
+    color: 'rgba(255,255,255,0.8)',
     marginTop: 4,
   },
   heroSection: {
     paddingHorizontal: 20,
     marginBottom: 32,
+    marginTop: 20,
   },
   heroGradient: {
     borderRadius: 32,

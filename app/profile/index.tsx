@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Modal, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getUserProfile, UserProfile, saveUserProfile } from '../../utils/storage';
 
 export default function ProfileScreen() {
@@ -30,11 +31,21 @@ export default function ProfileScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <View style={styles.container}>
+                <LinearGradient
+                    colors={["#065F46", "#064E3B"]}
+                    style={styles.header}
+                >
+                    <View style={styles.headerTop}>
+                        <View style={{ width: 40 }} />
+                        <Text style={styles.headerTitle}>My Profile</Text>
+                        <View style={{ width: 40 }} />
+                    </View>
+                </LinearGradient>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ color: '#666' }}>Loading profile...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
@@ -63,14 +74,19 @@ export default function ProfileScreen() {
 
     if (!profile) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>My Profile</Text>
-                    <View style={{ width: 40 }} />
-                </View>
+            <View style={styles.container}>
+                <LinearGradient
+                    colors={["#065F46", "#064E3B"]}
+                    style={styles.header}
+                >
+                    <View style={styles.headerTop}>
+                        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                            <Ionicons name="arrow-back" size={24} color="white" />
+                        </TouchableOpacity>
+                        <Text style={styles.headerTitle}>My Profile</Text>
+                        <View style={{ width: 40 }} />
+                    </View>
+                </LinearGradient>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
                     <Ionicons name="person-circle-outline" size={80} color="#ccc" />
                     <Text style={{ fontSize: 18, fontWeight: '600', color: '#666', marginTop: 16 }}>No Profile Found</Text>
@@ -82,21 +98,26 @@ export default function ProfileScreen() {
                         <Text style={{ color: 'white', fontWeight: 'bold' }}>Setup Profile</Text>
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Profile</Text>
-                <TouchableOpacity onPress={() => router.push('/profile/edit')} style={styles.iconButton}>
-                    <Ionicons name="pencil" size={24} color="#4CAF50" />
-                </TouchableOpacity>
-            </View>
+        <View style={styles.container}>
+            <LinearGradient
+                colors={["#065F46", "#064E3B"]}
+                style={styles.header}
+            >
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>My Profile</Text>
+                    <TouchableOpacity onPress={() => router.push('/profile/edit')} style={styles.iconButton}>
+                        <Ionicons name="pencil" size={24} color="white" />
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
 
             <ScrollView 
                 style={styles.scrollView}
@@ -234,7 +255,7 @@ export default function ProfileScreen() {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -244,23 +265,30 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f9fa',
     },
     header: {
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        paddingHorizontal: 16,
+        paddingBottom: 40,
+        borderBottomLeftRadius: 40,
+        borderBottomRightRadius: 40,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+    },
+    headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-        paddingTop: 8,
-        backgroundColor: 'white',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: 'white',
+        letterSpacing: 0.5,
     },
     scrollView: {
         flex: 1,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
     },
     iconButton: {
         padding: 8,
