@@ -424,8 +424,8 @@ export default function AddMedicationScreen() {
               {getPatientAvatar() ? (
                 <Image source={{ uri: getPatientAvatar() }} style={styles.patientInfoAvatar} />
               ) : (
-                <View style={[styles.patientInfoAvatar, { backgroundColor: theme.lightAccent }]}>
-                  <Text style={[styles.patientInfoAvatarText, { color: theme.primary }]}>{getPatientName().charAt(0)}</Text>
+                <View style={[styles.patientInfoAvatar, styles.patientInfoAvatarPlaceholder, { backgroundColor: theme.lightAccent }]}>
+                  <Text style={[styles.patientInfoAvatarText, { color: theme.accent, textAlign: 'center' }]}>{getPatientName().charAt(0)}</Text>
                 </View>
               )}
             </View>
@@ -1402,6 +1402,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: "#059669",
+    textAlign: "center",
+    includeFontPadding: false,
+    lineHeight: 50,
   },
   patientInfoContent: {
     flex: 1,

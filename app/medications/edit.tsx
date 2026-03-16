@@ -406,7 +406,7 @@ export default function EditMedicationScreen() {
                 <Image source={{ uri: getPatientAvatar() }} style={styles.patientInfoAvatar} />
               ) : (
                 <View style={[styles.patientInfoAvatar, styles.patientInfoAvatarPlaceholder, { backgroundColor: theme.lightAccent }]}>
-                  <Text style={[styles.patientInfoAvatarText, { color: theme.accent }]}>{getPatientName().charAt(0)}</Text>
+                  <Text style={[styles.patientInfoAvatarText, { color: theme.accent, textAlign: 'center' }]}>{getPatientName().charAt(0)}</Text>
                 </View>
               )}
             </View>
@@ -859,6 +859,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: "#059669",
+    textAlign: "center",
+    includeFontPadding: false,
+    lineHeight: 50,
   },
   patientInfoContent: {
     flex: 1,
