@@ -10,15 +10,18 @@ import {
   Dimensions,
   Platform,
   Alert,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import { 
-  getMedications, 
-  updateMedication, 
-  deleteMedication, 
+  getMedications,
+  updateMedication,
+  deleteMedication,
+  getUserProfile,
+  ManagedPatient,
   Medication 
 } from "../../utils/storage";
 
@@ -139,6 +142,26 @@ export default function EditMedicationScreen() {
   const [selectedFrequency, setSelectedFrequency] = useState("");
   const [selectedDuration, setSelectedDuration] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [managedPatients, setManagedPatients] = useState<ManagedPatient[]>([]);
+
+  const getPatientName = () => {
+    if (form.ownerId === "self") return "Me";
+    const patient = managedPatients.find(p => p.id === form.ownerId);
+    return patient ? patient.name : "Patient";
+  };
+
+  const getPatientAvatar = () => {
+    const patient = managedPatients.find(p => p.id === form.ownerId);
+    return patient?.image;
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      const profile = await getUserProfile();
+      setManagedPatients(profile?.managedPatients || []);
+    };
+    loadData();
+  }, []);
 
   useEffect(() => {
     const loadMedication = async () => {
@@ -336,7 +359,9 @@ export default function EditMedicationScreen() {
           >
             <Ionicons name="chevron-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Medication</Text>
+          <Text style={styles.headerTitle}>
+            {form.ownerId === "self" ? "Edit Medication" : `For ${getPatientName()}`}
+          </Text>
           <View style={{ width: 44 }} />
         </View>
       </LinearGradient>
@@ -347,6 +372,26 @@ export default function EditMedicationScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.formContentContainer}
         >
+          {/* Patient Info Card */}
+          {form.ownerId !== "self" && (
+            <View style={styles.patientInfoCard}>
+              <View style={styles.patientInfoAvatarContainer}>
+                {getPatientAvatar() ? (
+                  <Image source={{ uri: getPatientAvatar() }} style={styles.patientInfoAvatar} />
+                ) : (
+                  <View style={[styles.patientInfoAvatar, styles.patientInfoAvatarPlaceholder]}>
+                    <Text style={styles.patientInfoAvatarText}>{getPatientName().charAt(0)}</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.patientInfoContent}>
+                <Text style={styles.patientInfoName}>{getPatientName()}</Text>
+                <Text style={styles.patientInfoRole}>Managed Patient</Text>
+              </View>
+              <Ionicons name="person-circle-outline" size={24} color="#059669" />
+            </View>
+          )}
+
           {/* Basic Information */}
           <View style={styles.section}>
             <View style={styles.inputContainer}>
@@ -739,4 +784,51 @@ const styles = StyleSheet.create({
   mealChipIconActive: { backgroundColor: "rgba(255,255,255,0.2)" },
   mealChipText: { fontSize: 12, fontWeight: "600", color: "#333", textAlign: "center" },
   mealChipTextActive: { color: "white" },
+  // Patient Info Card
+  patientInfoCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 25,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  patientInfoAvatarContainer: {
+    marginRight: 15,
+  },
+  patientInfoAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  patientInfoAvatarPlaceholder: {
+    backgroundColor: "#D1FAE5",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  patientInfoAvatarText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#059669",
+  },
+  patientInfoContent: {
+    flex: 1,
+  },
+  patientInfoName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  patientInfoRole: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
+  },
 });

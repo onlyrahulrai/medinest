@@ -375,6 +375,7 @@ export default function CaregiverDashboard() {
                 selectedId={selectedMember}
                 onSelect={setSelectedMember}
                 onAddMember={() => setShowAddMemberModal(true)}
+                onAddMedication={(id) => router.push(`/medications/add?patientId=${id}`)}
             />
           ) : (
             <View style={{ padding: 20, alignItems: 'center' }}>
@@ -382,6 +383,37 @@ export default function CaregiverDashboard() {
             </View>
           )}
         </View>
+
+        {/* ── Quick Actions ── */}
+        {selectedMember && managedPatients.some(p => p.id === selectedMember) && (
+          <View style={[styles.section, { paddingHorizontal: 20 }]}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <TouchableOpacity 
+              style={styles.quickActionCard}
+              onPress={() => router.push(`/medications/add?patientId=${selectedMember}`)}
+            >
+              <LinearGradient
+                colors={["#ecfdf5", "#d1fae5"]}
+                style={styles.quickActionGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <View style={styles.quickActionContent}>
+                  <View style={styles.quickActionIconContainer}>
+                    <Ionicons name="medkit-outline" size={24} color="#059669" />
+                  </View>
+                  <View>
+                    <Text style={styles.quickActionTitle}>Add Medication</Text>
+                    <Text style={styles.quickActionSubtitle}>
+                      Schedule for {managedPatients.find(p => p.id === selectedMember)?.name}
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#059669" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* ── Today's Schedule ── */}
         <View style={styles.section}>
@@ -639,5 +671,48 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "700",
+  },
+  quickActionCard: {
+    marginTop: 12,
+    marginBottom: 8,
+    borderRadius: 20,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#d1fae5",
+    shadowColor: "#059669",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  quickActionGradient: {
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  quickActionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  quickActionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quickActionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#065F46",
+  },
+  quickActionSubtitle: {
+    fontSize: 13,
+    color: "#059669",
+    marginTop: 2,
+    fontWeight: "500",
   },
 });

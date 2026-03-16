@@ -23,6 +23,7 @@ interface FamilyAvatarListProps {
   selectedId: string;
   onSelect: (id: string) => void;
   onAddMember?: () => void;
+  onAddMedication?: (id: string) => void;
 }
 
 export default function FamilyAvatarList({
@@ -30,6 +31,7 @@ export default function FamilyAvatarList({
   selectedId,
   onSelect,
   onAddMember,
+  onAddMedication,
 }: FamilyAvatarListProps) {
   const getInitials = (name: string) =>
     name
@@ -69,8 +71,17 @@ export default function FamilyAvatarList({
                   {member.statusText || "On Track"}
                 </Text>
               </View>
-              <View style={[styles.radio, isSelected && styles.radioSelected]}>
-                {isSelected && <View style={styles.radioInner} />}
+              <View style={styles.actionContainer}>
+                <TouchableOpacity
+                  style={styles.addMedicationButton}
+                  onPress={() => onAddMedication && onAddMedication(member.id)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="add-circle" size={28} color="#059669" />
+                </TouchableOpacity>
+                <View style={[styles.radio, isSelected && styles.radioSelected]}>
+                  {isSelected && <View style={styles.radioInner} />}
+                </View>
               </View>
             </View>
             
@@ -181,6 +192,15 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: "#1a8e2d",
+  },
+  actionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  addMedicationButton: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   cardFooter: {
     flexDirection: "row",

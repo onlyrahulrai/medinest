@@ -116,7 +116,18 @@ export default function AddMedicationScreen() {
 
   const { patientId } = useLocalSearchParams<{ patientId: string }>();
   const [managedPatients, setManagedPatients] = useState<ManagedPatient[]>([]);
-  
+
+  const getPatientName = () => {
+    if (form.ownerId === "self") return "Me";
+    const patient = managedPatients.find(p => p.id === form.ownerId);
+    return patient ? patient.name : "Patient";
+  };
+
+  const getPatientAvatar = () => {
+    const patient = managedPatients.find(p => p.id === form.ownerId);
+    return patient?.image;
+  };
+
   useEffect(() => {
     const loadPatients = async () => {
       const profile = await getUserProfile();
@@ -359,7 +370,9 @@ export default function AddMedicationScreen() {
           >
             <Ionicons name="chevron-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Medication</Text>
+          <Text style={styles.headerTitle}>
+            {form.ownerId === "self" ? "New Medication" : `For ${getPatientName()}`}
+          </Text>
           <View style={{ width: 44 }} />
         </View>
       </LinearGradient>
@@ -370,16 +383,41 @@ export default function AddMedicationScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.formContentContainer}
         >
-          {/* Patient Selection (only if caregiver has patients) */}
+          {/* Patient Info Card (Prominent when selected) */}
+          {form.ownerId !== "self" && (
+            <View style={styles.patientInfoCard}>
+              <View style={styles.patientInfoAvatarContainer}>
+                {getPatientAvatar() ? (
+                  <Image source={{ uri: getPatientAvatar() }} style={styles.patientInfoAvatar} />
+                ) : (
+                  <View style={[styles.patientInfoAvatar, styles.patientInfoAvatarPlaceholder]}>
+                    <Text style={styles.patientInfoAvatarText}>{getPatientName().charAt(0)}</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.patientInfoContent}>
+                <Text style={styles.patientInfoName}>{getPatientName()}</Text>
+                <Text style={styles.patientInfoRole}>Managed Patient</Text>
+              </View>
+              <Ionicons name="person-circle-outline" size={24} color="#059669" />
+            </View>
+          )}
+
+          {/* Patient Selection */}
           {(managedPatients.length > 0 || patientId) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Who is this for?</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.patientSelector}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.patientSelector} contentContainerStyle={{ paddingBottom: 5 }}>
                 <TouchableOpacity 
                   style={[styles.patientChip, form.ownerId === "self" && styles.patientChipActive]}
                   onPress={() => setForm({ ...form, ownerId: "self" })}
                 >
-                  <Text style={[styles.patientChipText, form.ownerId === "self" && styles.patientChipTextActive]}>Me</Text>
+                  <View style={styles.patientChipContent}>
+                    <View style={[styles.patientAvatarMini, form.ownerId === "self" && styles.patientAvatarMiniActive]}>
+                      <Ionicons name="person" size={14} color={form.ownerId === "self" ? "#059669" : "#666"} />
+                    </View>
+                    <Text style={[styles.patientChipText, form.ownerId === "self" && styles.patientChipTextActive]}>Me</Text>
+                  </View>
                 </TouchableOpacity>
                 {managedPatients.map(patient => (
                   <TouchableOpacity 
@@ -387,9 +425,20 @@ export default function AddMedicationScreen() {
                     style={[styles.patientChip, form.ownerId === patient.id && styles.patientChipActive]}
                     onPress={() => setForm({ ...form, ownerId: patient.id })}
                   >
-                    <Text style={[styles.patientChipText, form.ownerId === patient.id && styles.patientChipTextActive]}>
-                      {patient.name}
-                    </Text>
+                    <View style={styles.patientChipContent}>
+                      {patient.image ? (
+                        <Image source={{ uri: patient.image }} style={styles.patientAvatarMini} />
+                      ) : (
+                        <View style={[styles.patientAvatarMini, form.ownerId === patient.id && styles.patientAvatarMiniActive]}>
+                          <Text style={[styles.patientAvatarMiniText, form.ownerId === patient.id && styles.patientAvatarMiniTextActive]}>
+                            {patient.name.charAt(0)}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={[styles.patientChipText, form.ownerId === patient.id && styles.patientChipTextActive]}>
+                        {patient.name}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -1214,24 +1263,102 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   patientChip: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: "white",
     marginRight: 10,
     borderWidth: 1,
     borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   patientChipActive: {
     backgroundColor: "#059669",
     borderColor: "#059669",
   },
+  patientChipContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   patientChipText: {
     color: "#666",
     fontWeight: "600",
+    fontSize: 14,
   },
   patientChipTextActive: {
     color: "white",
+  },
+  patientAvatarMini: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  patientAvatarMiniActive: {
+    backgroundColor: "white",
+  },
+  patientAvatarMiniText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#666",
+  },
+  patientAvatarMiniTextActive: {
+    color: "#059669",
+  },
+  // Patient Info Card
+  patientInfoCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 25,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  patientInfoAvatarContainer: {
+    marginRight: 15,
+  },
+  patientInfoAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  patientInfoAvatarPlaceholder: {
+    backgroundColor: "#D1FAE5",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  patientInfoAvatarText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#059669",
+  },
+  patientInfoContent: {
+    flex: 1,
+  },
+  patientInfoName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  patientInfoRole: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
   },
   // Dosage Row
   unitLabel: {
