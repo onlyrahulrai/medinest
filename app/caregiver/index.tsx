@@ -13,7 +13,6 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { SafeAreaView } from "react-native-safe-area-context";
 import NotificationBell from "../../components/caregiver/NotificationBell";
 import AlertCard from "../../components/caregiver/AlertCard";
 import FamilyAvatarList, {
@@ -287,19 +286,25 @@ export default function CaregiverDashboard() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       {/* ── Header ── */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={["#065F46", "#064E3B"]}
+        style={styles.header}
+      >
         <View style={styles.headerTop}>
-          <View style={{ flex: 1 }} />
+          <View style={{ flex: 1, paddingRight: 16 }}>
+            <Text style={styles.appName}>Caregiver Dashboard</Text>
+            <Text style={styles.subtitle}>Overview of your family's health</Text>
+          </View>
           <NotificationBell
             count={2}
             onPress={() => Alert.alert("Notifications", "You have 2 new alerts")}
+            color="white"
+            style={styles.iconBtn}
           />
         </View>
-        <Text style={styles.appName}>Caregiver Dashboard</Text>
-        <Text style={styles.subtitle}>Overview of your family's health</Text>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         horizontal
@@ -451,7 +456,7 @@ export default function CaregiverDashboard() {
 
       <FloatingAddButton onPress={() => router.push(`/medications/add?patientId=${selectedMember}`)} />
 
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -463,39 +468,47 @@ const styles = StyleSheet.create({
   },
   /* Header */
   header: {
-    paddingTop: 8,
+    paddingTop: Platform.OS === "ios" ? 60 : 40,
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: "white",
+    paddingBottom: 40,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
   },
   headerTop: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
   },
   appName: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "800",
-    color: "#1a1a1a",
+    color: "white",
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "400",
-    color: "#666",
-    marginTop: 4,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 2,
+  },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   /* Stats */
   statsContainer: {
     flexGrow: 0,
     backgroundColor: "white",
-    paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
   statsScroll: {
     paddingHorizontal: 20,
+    paddingVertical: 20,
     gap: 12,
   },
   statCard: {

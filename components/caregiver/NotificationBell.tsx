@@ -5,12 +5,23 @@ import { Ionicons } from "@expo/vector-icons";
 interface NotificationBellProps {
   count?: number;
   onPress?: () => void;
+  color?: string;
+  style?: any;
 }
 
-export default function NotificationBell({ count = 0, onPress }: NotificationBellProps) {
+export default function NotificationBell({ 
+  count = 0, 
+  onPress, 
+  color = "#333", 
+  style 
+}: NotificationBellProps) {
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
-      <Ionicons name="notifications-outline" size={24} color="#333" />
+    <TouchableOpacity 
+      style={[styles.container, style]} 
+      onPress={onPress} 
+      activeOpacity={0.7}
+    >
+      <Ionicons name="notifications-outline" size={24} color={color} />
       {count > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{count > 9 ? "9+" : count}</Text>
