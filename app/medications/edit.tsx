@@ -326,7 +326,7 @@ export default function EditMedicationScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#1a8e2d", "#146922"]}
+        colors={["#0F766E", "#047857"]}
         style={styles.headerGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
@@ -338,7 +338,7 @@ export default function EditMedicationScreen() {
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={28} color="#1a8e2d" />
+            <Ionicons name="chevron-back" size={28} color="#0F766E" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Medication</Text>
         </View>
@@ -392,7 +392,7 @@ export default function EditMedicationScreen() {
           {/* Medication Type */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="medkit-outline" size={18} color="#1a8e2d" />{" "}Medication Type
+              <Ionicons name="medkit-outline" size={18} color="#0F766E" />{" "}Medication Type
             </Text>
             <View style={styles.typeGrid}>
               {MEDICATION_TYPES.map((medType) => (
@@ -402,7 +402,7 @@ export default function EditMedicationScreen() {
                   onPress={() => setForm({ ...form, type: medType.label })}
                 >
                   <View style={[styles.typeIconContainer, form.type === medType.label && styles.typeIconContainerActive]}>
-                    <Ionicons name={medType.icon} size={20} color={form.type === medType.label ? "white" : "#1a8e2d"} />
+                    <Ionicons name={medType.icon} size={20} color={form.type === medType.label ? "white" : "#0F766E"} />
                   </View>
                   <Text style={[styles.typeChipLabel, form.type === medType.label && styles.typeChipLabelActive]}>
                     {medType.label}
@@ -415,7 +415,7 @@ export default function EditMedicationScreen() {
           {/* Medicine Color */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="color-palette-outline" size={18} color="#1a8e2d" />{" "}Medicine Color
+              <Ionicons name="color-palette-outline" size={18} color="#0F766E" />{" "}Medicine Color
             </Text>
             <View style={styles.colorGrid}>
               {MEDICINE_COLORS.map((color) => (
@@ -433,7 +433,7 @@ export default function EditMedicationScreen() {
           {/* Meal Timing */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="restaurant-outline" size={18} color="#1a8e2d" />{" "}When to Take
+              <Ionicons name="restaurant-outline" size={18} color="#0F766E" />{" "}When to Take
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mealTimingScroller}>
               {MEAL_TIMINGS.map((timing) => (
@@ -448,7 +448,7 @@ export default function EditMedicationScreen() {
                   }}
                 >
                   <View style={[styles.mealChipIcon, form.mealTiming.includes(timing.label) && styles.mealChipIconActive]}>
-                    <Ionicons name={timing.icon} size={20} color={form.mealTiming.includes(timing.label) ? "white" : "#1a8e2d"} />
+                    <Ionicons name={timing.icon} size={20} color={form.mealTiming.includes(timing.label) ? "white" : "#0F766E"} />
                   </View>
                   <Text style={[styles.mealChipText, form.mealTiming.includes(timing.label) && styles.mealChipTextActive]}>
                     {timing.label}
@@ -471,7 +471,7 @@ export default function EditMedicationScreen() {
               onPress={() => setShowDatePicker(true)}
             >
               <View style={styles.dateIconContainer}>
-                <Ionicons name="calendar" size={20} color="#1a8e2d" />
+                <Ionicons name="calendar" size={20} color="#0F766E" />
               </View>
               <Text style={styles.dateButtonText}>
                 Starts {form.startDate.toLocaleDateString()}
@@ -500,7 +500,7 @@ export default function EditMedicationScreen() {
                     onPress={() => setShowTimePicker(true)}
                   >
                     <View style={styles.timeIconContainer}>
-                      <Ionicons name="time-outline" size={20} color="#1a8e2d" />
+                      <Ionicons name="time-outline" size={20} color="#0F766E" />
                     </View>
                     <Text style={styles.timeButtonText}>{time}</Text>
                     <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -542,7 +542,7 @@ export default function EditMedicationScreen() {
               <View style={styles.switchRow}>
                 <View style={styles.switchLabelContainer}>
                   <View style={styles.iconContainer}>
-                    <Ionicons name="reload" size={20} color="#1a8e2d" />
+                    <Ionicons name="reload" size={20} color="#0F766E" />
                   </View>
                   <View>
                     <Text style={styles.switchLabel}>Refill Tracking</Text>
@@ -556,7 +556,7 @@ export default function EditMedicationScreen() {
                   onValueChange={(value) =>
                     setForm({ ...form, refillReminder: value })
                   }
-                  trackColor={{ false: "#ddd", true: "#1a8e2d" }}
+                  trackColor={{ false: "#ddd", true: "#0F766E" }}
                   thumbColor="white"
                 />
               </View>
@@ -594,7 +594,7 @@ export default function EditMedicationScreen() {
           {/* Additional Details */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="medical-outline" size={18} color="#1a8e2d" />{" "}Additional Details
+              <Ionicons name="medical-outline" size={18} color="#0F766E" />{" "}Additional Details
             </Text>
             <View style={styles.inputContainer}>
               <TextInput
@@ -642,7 +642,7 @@ export default function EditMedicationScreen() {
             disabled={isSubmitting}
           >
             <LinearGradient
-              colors={["#1a8e2d", "#146922"]}
+              colors={["#0F766E", "#047857"]}
               style={styles.saveButtonGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -681,12 +681,12 @@ const styles = StyleSheet.create({
   inputError: { borderColor: "#E91E63", borderWidth: 1 },
   optionsGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
   optionCard: { width: (width - 60) / 2, backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5, alignItems: "center", borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  selectedOptionCard: { backgroundColor: "#1a8e2d", borderColor: "#1a8e2d" },
+  selectedOptionCard: { backgroundColor: "#0F766E", borderColor: "#0F766E" },
   optionIcon: { width: 50, height: 50, borderRadius: 25, backgroundColor: "#f5f5f5", justifyContent: "center", alignItems: "center", marginBottom: 10 },
   selectedOptionIcon: { backgroundColor: "rgba(255, 255, 255, 0.2)" },
   optionLabel: { fontSize: 14, fontWeight: "600", color: "#333", textAlign: "center" },
   selectedOptionLabel: { color: "white" },
-  durationNumber: { fontSize: 24, fontWeight: "700", color: "#1a8e2d", marginBottom: 5 },
+  durationNumber: { fontSize: 24, fontWeight: "700", color: "#0F766E", marginBottom: 5 },
   selectedDurationNumber: { color: "white" },
   inputContainer: { backgroundColor: "white", borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   dateButton: { flexDirection: "row", alignItems: "center", backgroundColor: "white", borderRadius: 16, padding: 15, marginTop: 15, borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
@@ -720,13 +720,13 @@ const styles = StyleSheet.create({
   unitLabel: { fontSize: 14, fontWeight: "600", color: "#666", marginBottom: 8, marginTop: 4 },
   unitScroller: { marginBottom: 8 },
   unitChip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, backgroundColor: "white", marginRight: 8, borderWidth: 1, borderColor: "#e0e0e0" },
-  unitChipActive: { backgroundColor: "#1a8e2d", borderColor: "#1a8e2d" },
+  unitChipActive: { backgroundColor: "#0F766E", borderColor: "#0F766E" },
   unitChipText: { fontSize: 14, fontWeight: "600", color: "#666" },
   unitChipTextActive: { color: "white" },
   typeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   typeChip: { width: (width - 70) / 4, alignItems: "center", paddingVertical: 12, borderRadius: 14, backgroundColor: "white", borderWidth: 1, borderColor: "#e0e0e0" },
-  typeChipActive: { backgroundColor: "#1a8e2d", borderColor: "#1a8e2d" },
-  typeIconContainer: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#E8F5E9", justifyContent: "center", alignItems: "center", marginBottom: 6 },
+  typeChipActive: { backgroundColor: "#0F766E", borderColor: "#0F766E" },
+  typeIconContainer: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#D1FAE5", justifyContent: "center", alignItems: "center", marginBottom: 6 },
   typeIconContainerActive: { backgroundColor: "rgba(255,255,255,0.2)" },
   typeChipLabel: { fontSize: 11, fontWeight: "600", color: "#333", textAlign: "center" },
   typeChipLabelActive: { color: "white" },
@@ -735,8 +735,8 @@ const styles = StyleSheet.create({
   colorCircleActive: { borderWidth: 3, borderColor: "white", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 },
   mealTimingScroller: { flexDirection: "row" },
   mealChip: { alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, borderRadius: 14, backgroundColor: "white", marginRight: 10, borderWidth: 1, borderColor: "#e0e0e0", minWidth: 100 },
-  mealChipActive: { backgroundColor: "#1a8e2d", borderColor: "#1a8e2d" },
-  mealChipIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#E8F5E9", justifyContent: "center", alignItems: "center", marginBottom: 6 },
+  mealChipActive: { backgroundColor: "#0F766E", borderColor: "#0F766E" },
+  mealChipIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#D1FAE5", justifyContent: "center", alignItems: "center", marginBottom: 6 },
   mealChipIconActive: { backgroundColor: "rgba(255,255,255,0.2)" },
   mealChipText: { fontSize: 12, fontWeight: "600", color: "#333", textAlign: "center" },
   mealChipTextActive: { color: "white" },
