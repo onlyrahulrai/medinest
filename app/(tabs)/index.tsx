@@ -349,9 +349,25 @@ export default function HomeScreen() {
     }
   };
 
+  const handleSkipDose = async (medication: Medication) => {
+    try {
+      await recordDose(medication.id, false, new Date().toISOString(), 'self', 'skipped');
+      await loadMedications();
+    } catch (error) {
+      console.error("Error skipping dose:", error);
+      Alert.alert("Error", "Failed to skip dose. Please try again.");
+    }
+  };
+
   const isDoseTaken = (medicationId: string) => {
     return doseHistory.some(
       (dose) => dose.medicationId === medicationId && dose.taken
+    );
+  };
+
+  const isDoseSkipped = (medicationId: string) => {
+    return doseHistory.some(
+      (dose) => dose.medicationId === medicationId && dose.status === 'skipped'
     );
   };
 
@@ -604,54 +620,112 @@ export default function HomeScreen() {
                 );
               }
 
+              // Group medications by scheduleGroupId AND time slot
+              const grouped: { key: string; meds: Medication[]; time: string }[] = [];
+              const seen = new Set<string>();
+              
+              for (const med of filteredMeds) {
+                // Each meditation can have multiple times, but for 'Today' we usually show them per-time slot
+                // The current app logic seems to flat-map medications by their time slots in 'todaysMedications'
+                // Let's assume 'todaysMedications' already has one entry per time slot for that med
+                
+                const timeStr = med.times[0] || "No time";
+                const groupingKey = med.scheduleGroupId 
+                  ? `${med.scheduleGroupId}_${timeStr}`
+                  : `${med.id}_${timeStr}`;
+
+                if (seen.has(groupingKey)) continue;
+                seen.add(groupingKey);
+
+                grouped.push({
+                  key: groupingKey,
+                  time: timeStr,
+                  meds: filteredMeds.filter(m => {
+                    const mTime = m.times[0] || "No time";
+                    if (med.scheduleGroupId) {
+                      return m.scheduleGroupId === med.scheduleGroupId && mTime === timeStr;
+                    }
+                    return m.id === med.id && mTime === timeStr;
+                  }),
+                });
+              }
+
               return (
                 <View style={styles.timelineContainer}>
-                  {filteredMeds.map((medication, index) => {
-                    const isTaken = isDoseTaken(medication.id);
+                  {grouped.map((group, index) => {
+                    const allTaken = group.meds.every(m => isDoseTaken(m.id));
+                    const isGroup = group.meds.length > 1;
+
                     return (
-                      <View key={medication.id} style={styles.timelineRow}>
-                        {/* Subtly dashed vertical timeline track */}
+                      <View key={group.key} style={styles.timelineRow}>
                         <View style={styles.timelineTrack}>
-                          <View style={[styles.timelineDot, isTaken && styles.timelineDotTaken]} />
-                          {index !== filteredMeds.length - 1 && <View style={styles.timelineLine} />}
+                          <View style={[styles.timelineDot, allTaken && styles.timelineDotTaken]} />
+                          {index !== grouped.length - 1 && <View style={styles.timelineLine} />}
                         </View>
 
-                        {/* The Medication Info Card */}
-                        <View style={[styles.premiumDoseCard, isTaken && styles.premiumDoseCardTaken]}>
-                          <View style={styles.doseInfo}>
-                            <Text style={[styles.premiumMedicineName, isTaken && styles.premiumTextTaken]}>
-                              {medication.name}
-                              {medication.addedBy === 'caregiver' && (
-                                <Text style={styles.caregiverBadgeText}> ✨</Text>
-                              )}
-                            </Text>
-                            <Text style={styles.premiumDosageInfo}>
-                              {medication.dosage} • {medication.times[0]}
-                            </Text>
-                          </View>
+                        <View style={[styles.premiumDoseCard, allTaken && styles.premiumDoseCardTaken]}>
+                          {isGroup && (
+                            <View style={styles.groupBadge}>
+                              <Ionicons name="layers-outline" size={12} color="#059669" />
+                              <Text style={styles.groupBadgeText}>{group.meds.length} medicines • {group.time}</Text>
+                            </View>
+                          )}
 
-                          <View style={styles.cardActions}>
-                            <TouchableOpacity
-                              style={styles.editIconBtn}
-                              onPress={() => router.push(`/medications/edit?id=${medication.id}`)}
-                            >
-                              <Ionicons name="create-outline" size={18} color="#666" />
-                            </TouchableOpacity>
-
-                            {isTaken ? (
-                              <View style={styles.takenBadge}>
-                                <Ionicons name="checkmark" size={16} color="#059669" />
-                                <Text style={styles.takenBadgeText}>Taken</Text>
+                          {group.meds.map((medication) => {
+                            const isTaken = isDoseTaken(medication.id);
+                            const isSkipped = isDoseSkipped(medication.id);
+                            const isHandled = isTaken || isSkipped;
+                            return (
+                              <View key={medication.id} style={[styles.groupMedRow, isGroup && styles.groupMedRowBorder]}>
+                                <View style={styles.doseInfo}>
+                                  <Text style={[styles.premiumMedicineName, isHandled && styles.premiumTextTaken]}>
+                                    {medication.name}
+                                    {medication.addedBy === 'caregiver' && (
+                                      <Text style={styles.caregiverBadgeText}> ✨</Text>
+                                    )}
+                                  </Text>
+                                  <Text style={styles.premiumDosageInfo}>
+                                    {medication.dosage}{!isGroup ? ` • ${medication.times[0]}` : ''}
+                                  </Text>
+                                </View>
+                                <View style={styles.cardActions}>
+                                  {isTaken ? (
+                                    <View style={styles.takenBadge}>
+                                      <Ionicons name="checkmark" size={16} color="#059669" />
+                                      <Text style={styles.takenBadgeText}>Taken</Text>
+                                    </View>
+                                  ) : isSkipped ? (
+                                    <View style={styles.skippedBadge}>
+                                      <Ionicons name="remove-circle-outline" size={16} color="#F59E0B" />
+                                      <Text style={styles.skippedBadgeText}>Skipped</Text>
+                                    </View>
+                                  ) : (
+                                    <View style={styles.doseActionButtons}>
+                                      <TouchableOpacity
+                                        style={styles.skipBtn}
+                                        onPress={() => handleSkipDose(medication)}
+                                      >
+                                        <Text style={styles.skipBtnText}>Skip</Text>
+                                      </TouchableOpacity>
+                                      <TouchableOpacity
+                                        style={styles.premiumTakeBtn}
+                                        onPress={() => handleTakeDose(medication)}
+                                      >
+                                        <Text style={styles.premiumTakeBtnText}>Take</Text>
+                                      </TouchableOpacity>
+                                    </View>
+                                  )}
+                                </View>
                               </View>
-                            ) : (
-                              <TouchableOpacity
-                                style={styles.premiumTakeBtn}
-                                onPress={() => handleTakeDose(medication)}
-                              >
-                                <Text style={styles.premiumTakeBtnText}>Take</Text>
-                              </TouchableOpacity>
-                            )}
-                          </View>
+                            );
+                          })}
+
+                          <TouchableOpacity
+                            style={styles.editIconBtn}
+                            onPress={() => router.push(`/medications/edit?id=${group.meds[0].id}`)}
+                          >
+                            <Ionicons name="create-outline" size={18} color="#666" />
+                          </TouchableOpacity>
                         </View>
                       </View>
                     );
@@ -1207,8 +1281,7 @@ const styles = StyleSheet.create({
   },
   premiumDoseCard: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
     backgroundColor: "white",
     borderRadius: 20,
     padding: 16,
@@ -1217,6 +1290,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 12,
     elevation: 3,
+    overflow: "hidden",
   },
   premiumDoseCardTaken: {
     backgroundColor: "#F8FAFC",
@@ -1264,6 +1338,36 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 13,
     marginLeft: 4,
+  },
+  skippedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFBEB",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  skippedBadgeText: {
+    color: "#F59E0B",
+    fontWeight: "700",
+    fontSize: 13,
+    marginLeft: 4,
+  },
+  doseActionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  skipBtn: {
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  skipBtnText: {
+    color: "#D97706",
+    fontWeight: "700",
+    fontSize: 14,
   },
   // ── Streak Section ──
   streakSection: {
@@ -1399,6 +1503,33 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1F5F9",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    alignSelf: "flex-end",
+    marginTop: 8,
+  },
+  groupBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#D1FAE5",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginBottom: 8,
+    alignSelf: "flex-start",
+    gap: 4,
+  },
+  groupBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#059669",
+  },
+  groupMedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+  },
+  groupMedRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
 });
