@@ -42,14 +42,11 @@ export default function CalendarScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      console.log("[Calendar] loadData called with patientId:", patientId);
       const [meds, history, profile] = await Promise.all([
         getMedicationsForUser(patientId),
         getDoseHistory(),
         getUserProfile(),
       ]);
-      console.log("[Calendar] getMedicationsForUser returned:", meds.length, "medications");
-      console.log("[Calendar] Medication names:", meds.map(m => m.name));
       setMedications(meds);
       setDoseHistory(history.filter(h => h.patientId === patientId || (patientId === 'self' && h.patientId === undefined)));
       setManagedPatients(profile?.managedPatients || []);
@@ -316,7 +313,11 @@ export default function CalendarScreen() {
         </View>
       </LinearGradient>
 
-      <View style={styles.mainContent}>
+      <ScrollView
+        style={styles.mainContent}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         {managedPatients.length > 0 && (
           <View style={styles.patientSelector}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -371,13 +372,8 @@ export default function CalendarScreen() {
           )}
         </View>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scheduleList}
-        >
-          {renderMedicationsForDate()}
-        </ScrollView>
-      </View>
+        {renderMedicationsForDate()}
+      </ScrollView>
     </View>
   );
 }
