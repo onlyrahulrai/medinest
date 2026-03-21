@@ -17,7 +17,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import {
   getMedications,
   getMedicationsForUser,
@@ -603,14 +603,14 @@ export default function HomeScreen() {
               // Group medications by scheduleGroupId AND time slot
               const grouped: { key: string; meds: Medication[]; time: string }[] = [];
               const seen = new Set<string>();
-              
+
               for (const med of filteredMeds) {
                 // Each meditation can have multiple times, but for 'Today' we usually show them per-time slot
                 // The current app logic seems to flat-map medications by their time slots in 'todaysMedications'
                 // Let's assume 'todaysMedications' already has one entry per time slot for that med
-                
+
                 const timeStr = med.times[0] || "No time";
-                const groupingKey = med.scheduleGroupId 
+                const groupingKey = med.scheduleGroupId
                   ? `${med.scheduleGroupId}_${timeStr}`
                   : `${med.id}_${timeStr}`;
 
@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: Platform.OS === "ios" ? 60 : 40,
     paddingHorizontal: 20,
-    paddingBottom: 60,
+    paddingBottom: 0,
   },
   headerTop: {
     flexDirection: "row",
@@ -1306,6 +1306,7 @@ const styles = StyleSheet.create({
   },
   // ── Streak Section ──
   streakSection: {
+    paddingTop: 32,
     paddingHorizontal: 20,
     marginBottom: 28,
   },
