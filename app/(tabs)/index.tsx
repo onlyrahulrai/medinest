@@ -530,7 +530,7 @@ export default function HomeScreen() {
 
         {/* Quick Actions */}
         <Animated.View style={[styles.quickActionsContainer, { opacity: quickActionsAnim }]}>
-          <Text style={styles.sectionPremiumTitle}>Quick Actions</Text>
+          <Text style={[styles.sectionPremiumTitle, { paddingHorizontal: 20 }]}>Quick Actions</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickActionsScroll}>
             {QUICK_ACTIONS.map((action) => (
               <Link href={action.route} key={action.label} asChild>
@@ -549,14 +549,13 @@ export default function HomeScreen() {
         <Animated.View style={{ opacity: scheduleAnim }}>
           <View style={styles.scheduleSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionPremiumTitle}>Today's Schedule</Text>
+              <Text style={[styles.sectionPremiumTitle, { marginBottom: 0 }]}>Today's Schedule</Text>
               <Link href="/calendar" asChild>
                 <TouchableOpacity>
                   <Text style={styles.seeAllButton}>History</Text>
                 </TouchableOpacity>
               </Link>
             </View>
-
             {/* Search Bar */}
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
@@ -858,7 +857,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#1E293B",
     marginBottom: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
   },
   quickActionsScroll: {
     paddingHorizontal: 20,
