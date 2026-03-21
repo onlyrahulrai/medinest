@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
-import { 
+import {
   getMedications,
   updateMedication,
   deleteMedication,
@@ -897,8 +897,8 @@ const styles = StyleSheet.create({
   addAnotherText: { fontSize: 15, fontWeight: "700" },
 
   // Options
-  optionsGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
-  optionCard: { width: (width - 82) / 2, backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5, alignItems: "center", borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  optionsGrid: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", marginHorizontal: -5 },
+  optionCard: { width: (width - 56) / 2, backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5, alignItems: "center", borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   selectedOptionCard: { backgroundColor: "#059669", borderColor: "#059669" },
   optionIcon: { width: 50, height: 50, borderRadius: 25, backgroundColor: "#f5f5f5", justifyContent: "center", alignItems: "center", marginBottom: 10 },
   optionLabel: { fontSize: 14, fontWeight: "600", color: "#333", textAlign: "center" },
@@ -937,7 +937,7 @@ const styles = StyleSheet.create({
   unitChip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, backgroundColor: "white", marginRight: 8, borderWidth: 1, borderColor: "#e0e0e0" },
   unitChipText: { fontSize: 14, fontWeight: "600", color: "#666" },
   typeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  typeChip: { width: (width - 96) / 4, alignItems: "center", paddingVertical: 12, borderRadius: 14, backgroundColor: "white", borderWidth: 1, borderColor: "#e0e0e0" },
+  typeChip: { width: (width - 102) / 4, alignItems: "center", paddingVertical: 12, borderRadius: 14, backgroundColor: "white", borderWidth: 1, borderColor: "#e0e0e0" },
   typeIconContainer: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#D1FAE5", justifyContent: "center", alignItems: "center", marginBottom: 6 },
   typeChipLabel: { fontSize: 11, fontWeight: "600", color: "#333", textAlign: "center" },
   colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 14 },

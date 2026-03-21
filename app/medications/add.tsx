@@ -1075,9 +1075,9 @@ const styles = StyleSheet.create({
   mealChipText: { fontSize: 12, fontWeight: "600", color: "#333", textAlign: "center" },
 
   // Schedule styles
-  optionsGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
+  optionsGrid: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", marginHorizontal: -5 },
   optionCard: {
-    width: (width - 102) / 2, backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5,
+    width: (width - 56) / 2, backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5,
     alignItems: "center", borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
