@@ -277,7 +277,7 @@ export default function EditMedicationScreen() {
         {FREQUENCIES.map((f) => (
           <TouchableOpacity
             key={f.id}
-            style={[styles.optionCard, freq === f.label && { backgroundColor: theme.accent, borderColor: theme.accent }]}
+            style={[styles.optionCard, { width: (medIndex === 'global' ? width - 56 : width - 88) / 2 }, freq === f.label && { backgroundColor: theme.accent, borderColor: theme.accent }]}
             onPress={() => setFreq(f.label, f.times)}
           >
             <View style={[styles.optionIcon, freq === f.label && { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
@@ -304,7 +304,7 @@ export default function EditMedicationScreen() {
         {DURATIONS.map((d) => (
           <TouchableOpacity
             key={d.id}
-            style={[styles.optionCard, dur === d.label && { backgroundColor: theme.accent, borderColor: theme.accent }]}
+            style={[styles.optionCard, { width: (medIndex === 'global' ? width - 56 : width - 88) / 2 }, dur === d.label && { backgroundColor: theme.accent, borderColor: theme.accent }]}
             onPress={() => setDur(d.label)}
           >
             <Text style={[styles.durationNumber, dur === d.label && { color: "white" }]}>
@@ -898,7 +898,7 @@ const styles = StyleSheet.create({
 
   // Options
   optionsGrid: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", marginHorizontal: -5 },
-  optionCard: { width: (width - 56) / 2, backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5, alignItems: "center", borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  optionCard: { backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5, alignItems: "center", borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   selectedOptionCard: { backgroundColor: "#059669", borderColor: "#059669" },
   optionIcon: { width: 50, height: 50, borderRadius: 25, backgroundColor: "#f5f5f5", justifyContent: "center", alignItems: "center", marginBottom: 10 },
   optionLabel: { fontSize: 14, fontWeight: "600", color: "#333", textAlign: "center" },

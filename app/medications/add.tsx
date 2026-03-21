@@ -364,7 +364,7 @@ export default function AddMedicationScreen() {
         {FREQUENCIES.map((f) => (
           <TouchableOpacity
             key={f.id}
-            style={[styles.optionCard, freq === f.label && styles.selectedOptionCard]}
+            style={[styles.optionCard, { width: (medIndex === 'global' ? width - 56 : width - 88) / 2 }, freq === f.label && styles.selectedOptionCard]}
             onPress={() => setFreq(f.label, f.times)}
           >
             <View style={[styles.optionIcon, freq === f.label && styles.selectedOptionIcon]}>
@@ -393,7 +393,7 @@ export default function AddMedicationScreen() {
         {DURATIONS.map((d) => (
           <TouchableOpacity
             key={d.id}
-            style={[styles.optionCard, dur === d.label && styles.selectedOptionCard]}
+            style={[styles.optionCard, { width: (medIndex === 'global' ? width - 56 : width - 88) / 2 }, dur === d.label && styles.selectedOptionCard]}
             onPress={() => setDur(d.label)}
           >
             <Text style={[styles.durationNumber, dur === d.label && styles.selectedDurationNumber]}>
@@ -1077,7 +1077,7 @@ const styles = StyleSheet.create({
   // Schedule styles
   optionsGrid: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", marginHorizontal: -5 },
   optionCard: {
-    width: (width - 56) / 2, backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5,
+    backgroundColor: "white", borderRadius: 16, padding: 15, margin: 5,
     alignItems: "center", borderWidth: 1, borderColor: "#e0e0e0", shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
