@@ -1,24 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { saveOnboardingProfile, fetchCurrentUserProfile } from '../../services/api/profile';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { lookupCaregiverByPhone } from '../../services/api/caregivers';
 import '../../utils/i18n';
 
 const PHONE_REGEX = /^[6-9]\d{9}$/;
-
-// Simulate looking up a caregiver by phone number
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-async function lookupCaregiverByPhone(phone: string): Promise<{ found: boolean; name?: string }> {
-    await delay(1000);
-    // Mock: treat numbers ending in 0 as "not found" for demo
-    // In production, replace with a real API call
-    if (phone.endsWith('0')) {
-        return { found: false };
-    }
-    return { found: true, name: 'Verified User' };
-}
 
 export default function Step3Screen() {
     const router = useRouter();
@@ -26,16 +17,34 @@ export default function Step3Screen() {
     const params = useLocalSearchParams();
 
     // Params from previous steps
-    const name = params.name as string;
-    const dateOfBirth = params.dateOfBirth as string;
-    const gender = params.gender as string;
-    const weight = params.weight as string;
-    const conditions = params.conditions as string; // JSON stringified
-    const phoneNumber = params.phoneNumber as string;
+    const [name, setName] = useState(params.name as string || '');
+    const [dateOfBirth, setDateOfBirth] = useState(params.dateOfBirth as string || '');
+    const [gender, setGender] = useState(params.gender as string || '');
+    const [weight, setWeight] = useState(params.weight as string || '');
+    const [conditions, setConditions] = useState(params.conditions as string || ''); // JSON stringified
+    const [phoneNumber, setPhoneNumber] = useState(params.phoneNumber as string || '');
 
     const [emergencyName, setEmergencyName] = useState('');
     const [emergencyPhone, setEmergencyPhone] = useState('');
     const [emergencyRelation, setEmergencyRelation] = useState('');
+
+    // Pre-fill from saved profile if params are missing
+    useEffect(() => {
+      if (!name && !dateOfBirth) {
+        fetchCurrentUserProfile().then((profile) => {
+          if (profile?.name) setName(profile.name);
+          if (profile?.dateOfBirth) setDateOfBirth(new Date(profile.dateOfBirth).toISOString());
+          if (profile?.gender) setGender(profile.gender);
+          if (profile?.weight != null) setWeight(String(profile.weight));
+          if (profile?.phone) setPhoneNumber(profile.phone);
+          if (profile?.conditions?.length) setConditions(JSON.stringify(profile.conditions));
+          const caregiver = profile?.caregiverContacts?.[0];
+          if (caregiver?.name) setEmergencyName(caregiver.name);
+          if (caregiver?.phoneNumber) setEmergencyPhone(caregiver.phoneNumber);
+          if (caregiver?.relation) setEmergencyRelation(caregiver.relation);
+        }).catch(() => {});
+      }
+    }, []);
 
     // Phone validation & lookup state
     const [phoneError, setPhoneError] = useState('');
@@ -87,11 +96,25 @@ export default function Step3Screen() {
         }
     }, [phoneNumber, t]);
 
-    const handleNext = () => {
+    const handleNext = async () => {
         // Block if phone is entered but invalid
         if (emergencyPhone.trim().length > 0 && phoneError) {
             return;
         }
+        // Save progress to backend
+        const lang = await AsyncStorage.getItem('user-language');
+        await saveOnboardingProfile({
+            name,
+            dateOfBirth,
+            gender,
+            weight,
+            conditions: conditions ? JSON.parse(conditions) : [],
+            caregivers: emergencyName ? [{ name: emergencyName, phoneNumber: emergencyPhone, relation: emergencyRelation }] : [],
+            preferences: { reminderTimes: [], soundEnabled: true, vibrationEnabled: true, shareActivityWithCaregiver: true },
+            isOnboardingCompleted: false,
+            onboardingStep: 3,
+            languages: lang ? [lang] : [],
+        });
         router.push({
             pathname: '/(onboarding)/step4' as any,
             params: {
