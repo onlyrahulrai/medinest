@@ -23,11 +23,11 @@ import {
   UserProfile
 } from "../../utils/storage";
 import { scheduleMedicationReminder } from "../../utils/notifications";
-import { 
-  getMedicineById as apiGetMedicineById, 
-  updateMedicine as apiUpdateMedicine, 
-  deleteMedicine as apiDeleteMedicine, 
-  createMedicine as apiCreateMedicine, 
+import {
+  getMedicineById as apiGetMedicineById,
+  updateMedicine as apiUpdateMedicine,
+  deleteMedicine as apiDeleteMedicine,
+  createMedicine as apiCreateMedicine,
   getAllMedicines as apiGetAllMedicines,
   type UpdateMedicineInput,
   type CreateMedicineInput
@@ -205,7 +205,7 @@ export default function EditMedicationScreen() {
           getUserProfile(),
           globalScheduleService.getGlobalSchedule().catch(() => ({ times: ["09:00", "21:00"] }))
         ]);
-        
+
         setUserProfile(profile as any);
         setGlobalTimings(gSched.times);
 
@@ -323,28 +323,62 @@ export default function EditMedicationScreen() {
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
+    let firstErrorIndex = -1;
 
     medicines.forEach((med, index) => {
-      if (!med.name.trim()) newErrors[`name_${index}`] = "Medication name is required";
-      if (!med.dosage.trim()) newErrors[`dosage_${index}`] = "Dosage is required";
+      let medHasError = false;
+      if (!med.name.trim()) {
+        newErrors[`name_${index}`] = "Medication name is required";
+        medHasError = true;
+      }
+      if (!med.dosage.trim()) {
+        newErrors[`dosage_${index}`] = "Dosage is required";
+        medHasError = true;
+      }
+      if (!med.type) {
+        newErrors[`type_${index}`] = "Selection required";
+        medHasError = true;
+      }
       // Validate per-medicine schedule
-      if (!med.duration) newErrors[`duration_${index}`] = "Duration is required";
+      if (!med.duration) {
+        newErrors[`duration_${index}`] = "Duration is required";
+        medHasError = true;
+      }
       if (med.customSchedule) {
-        if (!med.frequency) newErrors[`frequency_${index}`] = "Frequency is required";
+        if (!med.frequency) {
+          newErrors[`frequency_${index}`] = "Frequency is required";
+          medHasError = true;
+        }
       }
       if (med.refillReminder) {
-        if (!med.currentSupply) newErrors[`currentSupply_${index}`] = "Required";
-        if (!med.refillAt) newErrors[`refillAt_${index}`] = "Required";
-        if (Number(med.refillAt) >= Number(med.currentSupply)) newErrors[`refillAt_${index}`] = "Alert < supply";
+        if (!med.currentSupply) {
+          newErrors[`currentSupply_${index}`] = "Required";
+          medHasError = true;
+        }
+        if (!med.refillAt) {
+          newErrors[`refillAt_${index}`] = "Required";
+          medHasError = true;
+        }
+        if (med.currentSupply && med.refillAt && Number(med.refillAt) >= Number(med.currentSupply)) {
+          newErrors[`refillAt_${index}`] = "Alert must be less than supply";
+          medHasError = true;
+        }
+      }
+
+      if (medHasError && firstErrorIndex === -1) {
+        firstErrorIndex = index;
       }
     });
     setErrors(newErrors);
+    if (firstErrorIndex !== -1) {
+      setExpandedMedicine(firstErrorIndex);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
     if (!validateForm()) {
-      Alert.alert("Error", "Please fill in all required fields correctly");
+      Alert.alert("Error", "Please fill in all required fields. Missing fields are highlighted in red.");
       return;
     }
     setIsSubmitting(true);
@@ -476,10 +510,10 @@ export default function EditMedicationScreen() {
 
   const renderMedicineCard = (med: MedicineEntry, index: number) => {
     const isExpanded = expandedMedicine === index;
-    const hasError = errors[`dosage_${index}`] || errors[`duration_${index}`] || errors[`frequency_${index}`];
+    const hasError = errors[`name_${index}`] || errors[`dosage_${index}`] || errors[`type_${index}`] || errors[`duration_${index}`] || errors[`frequency_${index}`];
 
     return (
-      <View key={med.id} style={[styles.medicineCard, hasError && { borderColor: "#FF5252" }]}>
+      <View key={med.id} style={[styles.medicineCard, hasError && { borderColor: "#FF5252", borderWidth: 2 }]}>
         {/* Medicine Card Header */}
         <TouchableOpacity
           style={styles.medicineCardHeader}
@@ -509,19 +543,37 @@ export default function EditMedicationScreen() {
         {/* Expanded Medicine Fields */}
         {isExpanded && (
           <View style={styles.medicineCardBody}>
-            {/* 1. Medicine Picture */}
+            {/* 0. Medicine Picture */}
+            <View style={[styles.innerSection, { borderBottomWidth: 0 }]}>
+              <View style={{ alignItems: "center" }}>
+                <TouchableOpacity style={styles.imageContainerSmall} onPress={() => pickImage(index)}>
+                  {med.imageUrl ? (
+                    <Image source={{ uri: med.imageUrl }} style={styles.medicationImage} />
+                  ) : (
+                    <View style={styles.imagePlaceholder}>
+                      <Ionicons name="camera-outline" size={28} color={theme.accent} />
+                      <Text style={styles.imagePlaceholderText}>Photo</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* 1. Medication Name */}
             <View style={styles.innerSection}>
-              <Text style={styles.innerSectionTitle}>1. Medicine Photo</Text>
-              <TouchableOpacity style={styles.imageContainerSmall} onPress={() => pickImage(index)}>
-                {med.imageUrl ? (
-                  <Image source={{ uri: med.imageUrl }} style={styles.medicationImage} />
-                ) : (
-                  <View style={styles.imagePlaceholder}>
-                    <Ionicons name="camera-outline" size={28} color={theme.accent} />
-                    <Text style={styles.imagePlaceholderText}>Photo</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              <Text style={styles.innerSectionTitle}>1. Medication Name</Text>
+              <View style={[styles.inputContainer, errors[`name_${index}`] && styles.inputError]}>
+                <TextInput
+                  style={styles.mainInput}
+                  placeholder="e.g. Paracetamol"
+                  placeholderTextColor="#999"
+                  value={med.name}
+                  onChangeText={(text) => {
+                    updateMedicine(index, { name: text });
+                    if (errors[`name_${index}`]) setErrors(prev => ({ ...prev, [`name_${index}`]: "" }));
+                  }}
+                />
+              </View>
             </View>
 
             {/* 2. Dosage & 3. Unit */}
@@ -558,7 +610,7 @@ export default function EditMedicationScreen() {
             {/* 4. Schedule Configuration */}
             <View style={styles.innerSection}>
               <Text style={styles.innerSectionTitle}>4. Schedule Configuration</Text>
-              
+
               <View style={styles.switchRow}>
                 <View style={styles.switchLabelContainer}>
                   <View style={[styles.iconContainer, { backgroundColor: theme.lightAccent }]}>
@@ -637,6 +689,7 @@ export default function EditMedicationScreen() {
             {/* 5. Type */}
             <View style={styles.innerSection}>
               <Text style={styles.innerSectionTitle}>5. Type</Text>
+              {errors[`type_${index}`] && <Text style={styles.errorText}>{errors[`type_${index}`]}</Text>}
               <View style={styles.typeGrid}>
                 {MEDICATION_TYPES.map((medType) => (
                   <TouchableOpacity
@@ -710,7 +763,7 @@ export default function EditMedicationScreen() {
               </View>
               {med.refillReminder && (
                 <View style={{ marginTop: 10 }}>
-                   <View style={styles.inputRow}>
+                  <View style={styles.inputRow}>
                     <View style={styles.flex1}>
                       <Text style={styles.subSectionLabel}>8.1 Current Supply</Text>
                       <View style={[styles.inputContainer, errors[`currentSupply_${index}`] && styles.inputError]}>
@@ -767,7 +820,7 @@ export default function EditMedicationScreen() {
             </View>
 
             {/* 11. Notes */}
-            <View style={styles.innerSection}>
+            <View style={[styles.innerSection, { borderBottomWidth: 0 }]}>
               <Text style={styles.innerSectionTitle}>11. Notes</Text>
               <View style={styles.textAreaContainer}>
                 <TextInput
@@ -899,8 +952,8 @@ export default function EditMedicationScreen() {
               }}
             />
           )
-        }
-      </ScrollView>
+          }
+        </ScrollView>
 
         <View style={styles.footer}>
           <TouchableOpacity style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]} onPress={handleSave} disabled={isSubmitting}>
@@ -946,7 +999,7 @@ const styles = StyleSheet.create({
   removeMedBtn: { padding: 6, borderRadius: 8, backgroundColor: "#FEE2E2" },
   medicineCardBody: { paddingHorizontal: 16, paddingBottom: 16, borderTopWidth: 1, borderTopColor: "#f0f0f0" },
   innerSection: {
-    marginTop: 15, paddingVertical: 15, borderTopWidth: 1, borderTopColor: "#f0f0f0",
+    marginTop: 15, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: "#f0f0f0",
   },
   innerSectionTitle: {
     fontSize: 16, fontWeight: "700", color: "#1a1a1a", marginBottom: 12,

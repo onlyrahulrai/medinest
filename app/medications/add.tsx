@@ -230,45 +230,65 @@ export default function AddMedicationScreen() {
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
+    let firstErrorIndex = -1;
 
     // Validate each medicine
     medicines.forEach((med, index) => {
+      let medHasError = false;
       if (!med.name.trim()) {
         newErrors[`name_${index}`] = "Medication name is required";
+        medHasError = true;
       }
       if (!med.dosage.trim()) {
         newErrors[`dosage_${index}`] = "Dosage is required";
+        medHasError = true;
+      }
+      if (!med.type) {
+        newErrors[`type_${index}`] = "Selection required";
+        medHasError = true;
       }
       // Validate per-medicine schedule
       if (!med.duration) {
         newErrors[`duration_${index}`] = "Duration is required";
+        medHasError = true;
       }
       if (med.customSchedule) {
         if (!med.frequency) {
           newErrors[`frequency_${index}`] = "Frequency is required";
+          medHasError = true;
         }
       }
       if (med.refillReminder) {
         if (!med.currentSupply) {
-          newErrors[`currentSupply_${index}`] = "Current supply is required for refill tracking";
+          newErrors[`currentSupply_${index}`] = "Required";
+          medHasError = true;
         }
         if (!med.refillAt) {
-          newErrors[`refillAt_${index}`] = "Refill alert threshold is required";
+          newErrors[`refillAt_${index}`] = "Required";
+          medHasError = true;
         }
-        if (Number(med.refillAt) >= Number(med.currentSupply)) {
-          newErrors[`refillAt_${index}`] = "Refill alert must be less than current supply";
+        if (med.currentSupply && med.refillAt && Number(med.refillAt) >= Number(med.currentSupply)) {
+          newErrors[`refillAt_${index}`] = "Alert must be less than supply";
+          medHasError = true;
         }
+      }
+
+      if (medHasError && firstErrorIndex === -1) {
+        firstErrorIndex = index;
       }
     });
 
     setErrors(newErrors);
+    if (firstErrorIndex !== -1) {
+      setExpandedMedicine(firstErrorIndex);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     try {
       if (!validateForm()) {
-        Alert.alert("Error", "Please fill in all required fields correctly");
+        Alert.alert("Error", "Please fill in all required fields. Missing fields are highlighted in red.");
         return;
       }
       if (isSubmitting) return;
@@ -424,10 +444,10 @@ export default function AddMedicationScreen() {
 
   const renderMedicineCard = (med: MedicineEntry, index: number) => {
     const isExpanded = expandedMedicine === index;
-    const hasError = errors[`dosage_${index}`] || errors[`duration_${index}`] || errors[`frequency_${index}`];
+    const hasError = errors[`name_${index}`] || errors[`dosage_${index}`] || errors[`type_${index}`] || errors[`duration_${index}`] || errors[`frequency_${index}`];
 
     return (
-      <View key={index} style={[styles.medicineCard, hasError && { borderColor: "#FF5252" }]}>
+      <View key={index} style={[styles.medicineCard, hasError && { borderColor: "#FF5252", borderWidth: 2 }]}>
         {/* Medicine Card Header */}
         <TouchableOpacity
           style={styles.medicineCardHeader}
@@ -457,10 +477,8 @@ export default function AddMedicationScreen() {
         {/* Expanded Medicine Fields */}
         {isExpanded && (
           <View style={styles.medicineCardBody}>
-            {/* 1. Medicine Picture */}
+            {/* 0. Medicine Picture */}
             <View style={[styles.innerSection, { borderBottomWidth: 0 }]}>
-              <Text style={styles.innerSectionTitle}>1. Medicine Photo</Text>
-
               <View style={{ alignItems: "center" }}>
                 <TouchableOpacity style={styles.imageContainerSmall} onPress={() => pickImage(index)}>
                   {med.imageUri ? (
@@ -472,6 +490,23 @@ export default function AddMedicationScreen() {
                     </View>
                   )}
                 </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* 1. Medication Name */}
+            <View style={styles.innerSection}>
+              <Text style={styles.innerSectionTitle}>1. Medication Name</Text>
+              <View style={[styles.inputContainer, errors[`name_${index}`] && styles.inputError]}>
+                <TextInput
+                  style={styles.mainInput}
+                  placeholder="e.g. Paracetamol"
+                  placeholderTextColor="#999"
+                  value={med.name}
+                  onChangeText={(text) => {
+                    updateMedicine(index, { name: text });
+                    if (errors[`name_${index}`]) setErrors(prev => ({ ...prev, [`name_${index}`]: "" }));
+                  }}
+                />
               </View>
             </View>
 
@@ -588,6 +623,7 @@ export default function AddMedicationScreen() {
             {/* 5. Type */}
             <View style={styles.innerSection}>
               <Text style={styles.innerSectionTitle}>5. Type</Text>
+              {errors[`type_${index}`] && <Text style={styles.errorText}>{errors[`type_${index}`]}</Text>}
               <View style={styles.typeGrid}>
                 {MEDICATION_TYPES.map((medType) => (
                   <TouchableOpacity
