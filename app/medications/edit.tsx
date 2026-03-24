@@ -712,22 +712,30 @@ export default function EditMedicationScreen() {
               ) : (
                 <View style={{ marginTop: 15 }}>
                   <Text style={styles.subSectionLabel}>Medication Time</Text>
-                  <View style={styles.timesContainer}>
+                  <View style={styles.routinesGrid}>
                     {med.times.map((time, tIndex) => (
                       <TouchableOpacity
                         key={tIndex}
-                        style={styles.timeButton}
+                        style={styles.routineChipLarge}
                         onPress={() => {
                           setActivePickerIndex(index);
                           setActiveTimeIndex(tIndex);
                           setShowTimePicker(true);
                         }}
                       >
-                        <View style={[styles.timeIconContainer, { backgroundColor: theme.lightAccent }]}>
-                          <Ionicons name="time-outline" size={20} color={theme.accent} />
+                        <View style={styles.routineChipHeader}>
+                          <Text style={styles.routineChipTitle}>Dose {tIndex + 1}</Text>
+                          <Ionicons name="chevron-forward-circle" size={20} color={theme.accent} />
                         </View>
-                        <Text style={styles.timeButtonText}>{time}</Text>
-                        <Ionicons name="chevron-forward" size={20} color="#666" />
+                        <View style={styles.routineChipTimeContainer}>
+                          <Ionicons name="time" size={22} color={theme.accent} />
+                          <Text style={styles.routineChipTime}>
+                            {moment(time, 'HH:mm').format('hh:mm A')}
+                          </Text>
+                        </View>
+                        <View style={styles.selectionBadge}>
+                          <Text style={styles.selectionBadgeText}>Tap to change</Text>
+                        </View>
                       </TouchableOpacity>
                     ))}
                   </View>
