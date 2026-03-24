@@ -1,110 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Switch } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTranslation } from 'react-i18next';
-import { saveUserProfile, UserProfile } from '../../utils/storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { mapRemoteProfileToLocalProfile, saveOnboardingProfile, fetchCurrentUserProfile } from '../../services/api/profile';
-import '../../utils/i18n';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { setupOnboardingRoutines } from '../../services/api/routines';
+import moment from 'moment';
+
+const DEFAULT_ROUTINES = [
+    { name: 'Morning', time: '09:00' },
+    { name: 'Lunch', time: '14:00' },
+    { name: 'Night', time: '21:00' },
+];
 
 export default function Step4Screen() {
     const router = useRouter();
-    const { t } = useTranslation();
     const params = useLocalSearchParams();
-
-    // Params from previous steps
-    const [name, setName] = useState(params.name as string || '');
-    const [dateOfBirth, setDateOfBirth] = useState(params.dateOfBirth as string || '');
-    const [gender, setGender] = useState(params.gender as string || '');
-    const [weight, setWeight] = useState(params.weight as string || '');
-    const [conditionsString, setConditionsString] = useState(params.conditions as string || '');
-    const [phoneNumber, setPhoneNumber] = useState(params.phoneNumber as string || '');
-    const [emergencyName, setEmergencyName] = useState(params.emergencyName as string || '');
-    const [emergencyPhone, setEmergencyPhone] = useState(params.emergencyPhone as string || '');
-    const [emergencyRelation, setEmergencyRelation] = useState(params.emergencyRelation as string || '');
-
-    const [soundEnabled, setSoundEnabled] = useState(true);
-    const [vibrationEnabled, setVibrationEnabled] = useState(true);
-    const [shareActivity, setShareActivity] = useState(true);
+    const [routines, setRoutines] = useState(DEFAULT_ROUTINES);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Pre-fill from saved profile if params are missing
-    useEffect(() => {
-      if (!name && !dateOfBirth) {
-        fetchCurrentUserProfile().then((profile) => {
-          if (profile?.name) setName(profile.name);
-          if (profile?.dateOfBirth) setDateOfBirth(new Date(profile.dateOfBirth).toISOString());
-          if (profile?.gender) setGender(profile.gender);
-          if (profile?.weight != null) setWeight(String(profile.weight));
-          if (profile?.phone) setPhoneNumber(profile.phone);
-          if (profile?.conditions?.length) setConditionsString(JSON.stringify(profile.conditions));
-          const caregiver = profile?.caregiverContacts?.[0];
-          if (caregiver?.name) setEmergencyName(caregiver.name);
-          if (caregiver?.phoneNumber) setEmergencyPhone(caregiver.phoneNumber);
-          if (caregiver?.relation) setEmergencyRelation(caregiver.relation);
-          if (profile?.preferences?.soundEnabled !== undefined) setSoundEnabled(profile.preferences.soundEnabled);
-          if (profile?.preferences?.vibrationEnabled !== undefined) setVibrationEnabled(profile.preferences.vibrationEnabled);
-          if (profile?.preferences?.shareActivityWithCaregiver !== undefined) setShareActivity(profile.preferences.shareActivityWithCaregiver);
-        }).catch(() => {});
-      }
-    }, []);
+    // Modal & Picker State
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [newRoutineName, setNewRoutineName] = useState('');
+    const [newRoutineTime, setNewRoutineTime] = useState(new Date());
+    const [editIndex, setEditIndex] = useState<number | null>(null);
 
-    const handleComplete = async () => {
+    const handleTimeChange = (event: any, selectedDate?: Date) => {
+        setShowTimePicker(false);
+        if (selectedDate) {
+            setNewRoutineTime(selectedDate);
+        }
+    };
+
+    const openEditModal = (index: number) => {
+        setEditIndex(index);
+        setNewRoutineName(routines[index].name);
+        setNewRoutineTime(moment(routines[index].time, 'HH:mm').toDate());
+        setShowAddModal(true);
+    };
+
+    const deleteRoutine = (index: number) => {
+        setRoutines(routines.filter((_, i) => i !== index));
+    };
+
+    const handleSaveRoutine = () => {
+        if (newRoutineName.trim()) {
+            const timeStr = moment(newRoutineTime).format('HH:mm');
+            if (editIndex !== null) {
+                const updatedRoutines = [...routines];
+                updatedRoutines[editIndex] = { name: newRoutineName, time: timeStr };
+                setRoutines(updatedRoutines);
+            } else {
+                setRoutines([...routines, { name: newRoutineName, time: timeStr }]);
+            }
+            setNewRoutineName('');
+            setEditIndex(null);
+            setShowAddModal(false);
+        }
+    };
+
+    const handleNext = async () => {
         setIsSaving(true);
         try {
-            const conditions = conditionsString ? JSON.parse(conditionsString) : [];
-
-            const profileData: UserProfile = {
-                name,
-                dateOfBirth,
-                gender,
-                weight,
-                conditions,
-                phoneNumber,
-                caregivers: emergencyName ? [{
-                    id: Math.random().toString(36).substr(2, 9),
-                    name: emergencyName,
-                    phoneNumber: emergencyPhone,
-                    relation: emergencyRelation
-                }] : [],
-                managedPatients: [], // Initialize empty
-                reminderTimes: ['08:00', '20:00'], // Default reminder times, can be customized later
-                soundEnabled,
-                vibrationEnabled,
-                shareActivityWithCaregiver: shareActivity,
-                isOnboardingCompleted: true,
-            };
-
-            const lang = await AsyncStorage.getItem('user-language');
-            const remoteProfile = await saveOnboardingProfile({
-                name,
-                dateOfBirth,
-                gender,
-                weight,
-                conditions,
-                caregivers: emergencyName ? [{
-                    name: emergencyName,
-                    phoneNumber: emergencyPhone,
-                    relation: emergencyRelation,
-                }] : [],
-                preferences: {
-                    reminderTimes: ['08:00', '20:00'],
-                    soundEnabled,
-                    vibrationEnabled,
-                    shareActivityWithCaregiver: shareActivity,
-                },
-                isOnboardingCompleted: true,
-                languages: lang ? [lang] : [],
+            await setupOnboardingRoutines(routines);
+            router.push({
+                pathname: '/(onboarding)/step5',
+                params: { ...params }
             });
-
-            await saveUserProfile(remoteProfile ? mapRemoteProfileToLocalProfile(remoteProfile) : profileData);
-
-            // Redirect to Home
-            router.replace('/(tabs)');
         } catch (error) {
-            console.error('Failed to save profile', error);
+            console.error('Failed to setup routines', error);
+            router.push({
+                pathname: '/(onboarding)/step5',
+                params: { ...params }
+            });
         } finally {
             setIsSaving(false);
         }
@@ -120,81 +89,123 @@ export default function Step4Screen() {
                     <View style={styles.progressDot} />
                     <View style={styles.progressDot} />
                     <View style={styles.progressDot} />
-                    <View style={styles.progressDot} />
                     <View style={[styles.progressDot, styles.progressDotActive]} />
+                    <View style={styles.progressDot} />
                 </View>
                 <View style={{ width: 40 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <Text style={styles.title}>{t('onboarding.step4.title')}</Text>
-                <Text style={styles.subtitle}>{t('onboarding.step4.subtitle')}</Text>
+                <Text style={styles.title}>Daily Routine</Text>
+                <Text style={styles.subtitle}>When do you usually take medicines? This helps us group your reminders.</Text>
 
-                <View style={styles.formSection}>
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingInfo}>
-                            <Ionicons name="volume-high-outline" size={24} color="#4CAF50" style={styles.settingIcon} />
-                            <View>
-                                <Text style={styles.settingTitle}>{t('onboarding.step4.sound.title')}</Text>
-                                <Text style={styles.settingDescription}>{t('onboarding.step4.sound.description')}</Text>
+                <View style={styles.gridContainer}>
+                    {routines.map((routine, index) => (
+                        <TouchableOpacity 
+                            key={index} 
+                            style={styles.routineGridCard}
+                            onPress={() => openEditModal(index)}
+                        >
+                            <View style={styles.routineCardHeader}>
+                                <Text style={styles.routineName}>{routine.name}</Text>
+                                <TouchableOpacity onPress={() => deleteRoutine(index)}>
+                                    <Ionicons name="close-circle" size={20} color="#FF5252" />
+                                </TouchableOpacity>
                             </View>
-                        </View>
-                        <Switch
-                            value={soundEnabled}
-                            onValueChange={setSoundEnabled}
-                            trackColor={{ false: '#e0e0e0', true: '#A5D6A7' }}
-                            thumbColor={soundEnabled ? '#4CAF50' : '#f4f3f4'}
-                        />
-                    </View>
-
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingInfo}>
-                            <Ionicons name="phone-portrait-outline" size={24} color="#4CAF50" style={styles.settingIcon} />
-                            <View>
-                                <Text style={styles.settingTitle}>{t('onboarding.step4.vibration.title')}</Text>
-                                <Text style={styles.settingDescription}>{t('onboarding.step4.vibration.description')}</Text>
+                            <View style={styles.routineTimeContainer}>
+                                <Ionicons name="time" size={22} color="#4CAF50" />
+                                <Text style={styles.routineTimeText}>
+                                    {moment(routine.time, 'HH:mm').format('hh:mm A')}
+                                </Text>
                             </View>
-                        </View>
-                        <Switch
-                            value={vibrationEnabled}
-                            onValueChange={setVibrationEnabled}
-                            trackColor={{ false: '#e0e0e0', true: '#A5D6A7' }}
-                            thumbColor={vibrationEnabled ? '#4CAF50' : '#f4f3f4'}
-                        />
-                    </View>
+                            <View style={styles.editBadge}>
+                                <Text style={styles.editBadgeText}>Tap to edit</Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
 
-                    <View style={styles.settingRow}>
-                        <View style={styles.settingInfo}>
-                            <Ionicons name="share-social-outline" size={24} color="#4CAF50" style={styles.settingIcon} />
-                            <View>
-                                <Text style={styles.settingTitle}>{t('onboarding.step4.shareActivity.title')}</Text>
-                                <Text style={styles.settingDescription}>{t('onboarding.step4.shareActivity.description')}</Text>
-                             </View>
-                        </View>
-                        <Switch
-                            value={shareActivity}
-                            onValueChange={setShareActivity}
-                            trackColor={{ false: '#e0e0e0', true: '#A5D6A7' }}
-                            thumbColor={shareActivity ? '#4CAF50' : '#f4f3f4'}
-                        />
-                    </View>
+                    <TouchableOpacity 
+                        style={styles.addGridCard} 
+                        onPress={() => {
+                            setEditIndex(null);
+                            setNewRoutineName('');
+                            setNewRoutineTime(moment('08:00', 'HH:mm').toDate());
+                            setShowAddModal(true);
+                        }}
+                    >
+                        <Ionicons name="add" size={32} color="#4CAF50" />
+                        <Text style={styles.addGridText}>Add New</Text>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            {showTimePicker && (
+                <DateTimePicker
+                    value={newRoutineTime}
+                    mode="time"
+                    is24Hour={true}
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleTimeChange}
+                />
+            )}
+
+            <Modal visible={showAddModal} transparent animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>
+                            {editIndex !== null ? 'Edit Routine' : 'New Routine'}
+                        </Text>
+                        
+                        <Text style={styles.modalLabel}>Routine Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="e.g. Evening, Bedtime"
+                            value={newRoutineName}
+                            onChangeText={setNewRoutineName}
+                        />
+
+                        <Text style={styles.modalLabel}>Occurrence Time</Text>
+                        <TouchableOpacity style={styles.timeSelectBtn} onPress={() => setShowTimePicker(true)}>
+                            <Ionicons name="time-outline" size={20} color="#4CAF50" />
+                            <Text style={styles.timeSelectText}>
+                                {moment(newRoutineTime).format('hh:mm A')}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity 
+                                style={styles.cancelBtn} 
+                                onPress={() => {
+                                    setShowAddModal(false);
+                                    setEditIndex(null);
+                                }}
+                            >
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveRoutine}>
+                                <Text style={styles.saveText}>
+                                    {editIndex !== null ? 'Update' : 'Add Routine'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             <View style={styles.footer}>
                 <TouchableOpacity
                     style={[styles.nextButton, isSaving && styles.nextButtonDisabled]}
-                    onPress={handleComplete}
+                    onPress={handleNext}
                     disabled={isSaving}
                 >
                     <LinearGradient
                         colors={isSaving ? ['#e0e0e0', '#e0e0e0'] : ['#4CAF50', '#2E7D32']}
                         style={styles.nextButtonGradient}
                     >
-                        <Text style={[styles.nextButtonText, isSaving && styles.nextButtonTextDisabled]}>
-                            {isSaving ? t('onboarding.step4.saving') : t('onboarding.step4.complete')}
+                        <Text style={styles.nextButtonText}>
+                            Next Step
                         </Text>
-                        {!isSaving && <Ionicons name="checkmark-circle-outline" size={24} color="white" />}
+                        {!isSaving && <Ionicons name="arrow-forward" size={24} color="white" />}
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
@@ -203,10 +214,7 @@ export default function Step4Screen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#ffffff',
-    },
+    container: { flex: 1, backgroundColor: '#ffffff' },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -215,102 +223,80 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: 10,
     },
-    backButton: {
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-    },
-    progressContainer: {
+    backButton: { width: 40, height: 40, justifyContent: 'center' },
+    progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E0E0E0' },
+    progressDotActive: { width: 24, backgroundColor: '#4CAF50' },
+    scrollContent: { padding: 24, paddingBottom: 40 },
+    title: { fontSize: 28, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 10 },
+    subtitle: { fontSize: 16, color: '#666', marginBottom: 30, lineHeight: 24 },
+    gridContainer: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    progressDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#E0E0E0',
-    },
-    progressDotActive: {
-        width: 24,
-        backgroundColor: '#4CAF50',
-    },
-    scrollContent: {
-        padding: 24,
-        paddingBottom: 40,
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#1a1a1a',
-        marginBottom: 10,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 40,
-        lineHeight: 24,
-    },
-    formSection: {
-        gap: 24,
-    },
-    settingRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 16,
         justifyContent: 'space-between',
-        backgroundColor: '#f9f9f9',
-        padding: 16,
-        borderRadius: 16,
+    },
+    routineGridCard: {
+        width: '47%',
+        backgroundColor: '#ffffff',
+        borderRadius: 24,
+        padding: 18,
         borderWidth: 1,
         borderColor: '#f0f0f0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 3,
     },
-    settingInfo: {
+    routineCardHeader: {
         flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 14,
     },
-    settingIcon: {
-        marginRight: 16,
-    },
-    settingTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 4,
-    },
-    settingDescription: {
-        fontSize: 14,
-        color: '#666',
-    },
-    footer: {
-        padding: 24,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-        borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
-        backgroundColor: 'white',
-    },
-    nextButton: {
-        width: '100%',
-        height: 56,
-        borderRadius: 16,
-        overflow: 'hidden',
-    },
-    nextButtonDisabled: {
-        opacity: 0.7,
-    },
-    nextButtonGradient: {
-        flex: 1,
-        flexDirection: 'row',
+    routineName: { fontSize: 17, fontWeight: '800', color: '#1E293B', flex: 1 },
+    routineTimeContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+    routineTimeText: { fontSize: 19, fontWeight: '900', color: '#334155' },
+    editBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, alignSelf: 'flex-start' },
+    editBadgeText: { fontSize: 11, color: '#64748B', fontWeight: '700' },
+    addGridCard: {
+        width: '47%',
+        height: 140,
+        borderRadius: 24,
+        borderWidth: 2,
+        borderColor: '#4CAF50',
+        borderStyle: 'dashed',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 8,
+        backgroundColor: '#F0FDF4',
     },
-    nextButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
+    addGridText: { color: '#4CAF50', fontSize: 15, fontWeight: '800', marginTop: 6 },
+    footer: { padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24, borderTopWidth: 1, borderTopColor: '#f0f0f0', backgroundColor: 'white' },
+    nextButton: { width: '100%', height: 56, borderRadius: 16, overflow: 'hidden' },
+    nextButtonDisabled: { opacity: 0.7 },
+    nextButtonGradient: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+    nextButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+    modalContent: { backgroundColor: 'white', borderRadius: 28, padding: 28, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 25, elevation: 15 },
+    modalTitle: { fontSize: 24, fontWeight: '900', marginBottom: 22, color: '#1E293B' },
+    modalLabel: { fontSize: 14, fontWeight: '700', color: '#64748B', marginBottom: 8, marginLeft: 4 },
+    input: { backgroundColor: '#F8FAFC', padding: 18, borderRadius: 14, fontSize: 17, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0', color: '#1E293B' },
+    timeSelectBtn: { 
+        backgroundColor: '#F0FDF4',
+        padding: 18,
+        borderRadius: 14,
+        marginBottom: 26,
+        borderWidth: 1.5,
+        borderColor: '#4CAF50',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
     },
-    nextButtonTextDisabled: {
-        color: '#999',
-    }
+    timeSelectText: { color: '#059669', fontSize: 18, fontWeight: '800' },
+    modalFooter: { flexDirection: 'row', justifyContent: 'flex-end', gap: 14 },
+    cancelBtn: { padding: 14 },
+    cancelText: { color: '#64748B', fontWeight: '800' },
+    saveBtn: { backgroundColor: '#4CAF50', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 14, shadowColor: '#4CAF50', shadowOpacity: 0.35, shadowRadius: 12, elevation: 6 },
+    saveText: { color: 'white', fontWeight: '900', fontSize: 17 },
 });

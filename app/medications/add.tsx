@@ -1,4 +1,5 @@
 import { useState } from "react";
+import moment from "moment";
 import {
   View,
   Text,
@@ -19,6 +20,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import * as ImagePicker from "expo-image-picker";
+import ManageRoutinesBottomSheet from "../../components/medications/ManageRoutinesBottomSheet";
 import {
   getUserProfile,
   ManagedPatient,
@@ -31,7 +33,7 @@ import {
   scheduleRefillReminder,
 } from "../../utils/notifications";
 import { createMedicine, type CreateMedicineInput } from "../../services/api/medicines";
-import { globalScheduleService } from "../../services/api/globalSchedule";
+import { getRoutines, createRoutine, Routine } from "../../services/api/routines";
 
 // Top-level width calculation moved into the component for better reliability with Expo Go/Bridgeless mode.
 
@@ -91,8 +93,10 @@ interface MedicineEntry {
   currentSupply: string;
   refillAt: string;
   imageUri: string;
+  perIntake: string;
   // Per-medicine schedule override
   customSchedule: boolean;
+  routineIds: string[];
   frequency: string;
   times: string[];
   duration: string;
@@ -113,7 +117,9 @@ const createEmptyMedicine = (): MedicineEntry => ({
   currentSupply: "",
   refillAt: "",
   imageUri: "",
+  perIntake: "1",
   customSchedule: false,
+  routineIds: [],
   frequency: "Once daily",
   times: ["09:00"],
   duration: "30 days",
@@ -130,7 +136,7 @@ export default function AddMedicationScreen() {
     ownerId: "self",
   });
 
-  const [globalTimings, setGlobalTimings] = useState<string[]>(["09:00", "21:00"]);
+  const [routines, setRoutines] = useState<Routine[]>([]);
 
   // Per-medicine fields
   const [medicines, setMedicines] = useState<MedicineEntry[]>([createEmptyMedicine()]);
@@ -173,13 +179,13 @@ export default function AddMedicationScreen() {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      const [profile, gSched] = await Promise.all([
+      const [profile, fetchedRoutines] = await Promise.all([
         getUserProfile(),
-        globalScheduleService.getGlobalSchedule().catch(() => ({ times: ["09:00", "21:00"] }))
+        getRoutines().catch(() => [])
       ]);
       setUserProfile(profile as any);
       setManagedPatients(profile?.managedPatients || []);
-      setGlobalTimings(gSched.times);
+      setRoutines(fetchedRoutines);
       if (patientId) {
         setSchedule(prev => ({ ...prev, ownerId: patientId }));
       }
@@ -193,6 +199,7 @@ export default function AddMedicationScreen() {
   const [selectedFrequency, setSelectedFrequency] = useState("");
   const [selectedDuration, setSelectedDuration] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showManageRoutines, setShowManageRoutines] = useState(false);
 
   const updateMedicine = (index: number, updates: Partial<MedicineEntry>) => {
     setMedicines(prev => prev.map((med, i) => i === index ? { ...med, ...updates } : med));
@@ -230,45 +237,65 @@ export default function AddMedicationScreen() {
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
+    let firstErrorIndex = -1;
 
     // Validate each medicine
     medicines.forEach((med, index) => {
+      let medHasError = false;
       if (!med.name.trim()) {
         newErrors[`name_${index}`] = "Medication name is required";
+        medHasError = true;
       }
       if (!med.dosage.trim()) {
         newErrors[`dosage_${index}`] = "Dosage is required";
+        medHasError = true;
+      }
+      if (!med.type) {
+        newErrors[`type_${index}`] = "Selection required";
+        medHasError = true;
       }
       // Validate per-medicine schedule
       if (!med.duration) {
         newErrors[`duration_${index}`] = "Duration is required";
+        medHasError = true;
       }
       if (med.customSchedule) {
         if (!med.frequency) {
           newErrors[`frequency_${index}`] = "Frequency is required";
+          medHasError = true;
         }
       }
       if (med.refillReminder) {
         if (!med.currentSupply) {
-          newErrors[`currentSupply_${index}`] = "Current supply is required for refill tracking";
+          newErrors[`currentSupply_${index}`] = "Required";
+          medHasError = true;
         }
         if (!med.refillAt) {
-          newErrors[`refillAt_${index}`] = "Refill alert threshold is required";
+          newErrors[`refillAt_${index}`] = "Required";
+          medHasError = true;
         }
-        if (Number(med.refillAt) >= Number(med.currentSupply)) {
-          newErrors[`refillAt_${index}`] = "Refill alert must be less than current supply";
+        if (med.currentSupply && med.refillAt && Number(med.refillAt) >= Number(med.currentSupply)) {
+          newErrors[`refillAt_${index}`] = "Alert must be less than supply";
+          medHasError = true;
         }
+      }
+
+      if (medHasError && firstErrorIndex === -1) {
+        firstErrorIndex = index;
       }
     });
 
     setErrors(newErrors);
+    if (firstErrorIndex !== -1) {
+      setExpandedMedicine(firstErrorIndex);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     try {
       if (!validateForm()) {
-        Alert.alert("Error", "Please fill in all required fields correctly");
+        Alert.alert("Error", "Please fill in all required fields. Missing fields are highlighted in red.");
         return;
       }
       if (isSubmitting) return;
@@ -278,25 +305,18 @@ export default function AddMedicationScreen() {
 
       for (const med of medicines) {
         const useCustom = med.customSchedule;
-        const useGlobalTiming = !useCustom;
-
-        // Use individual schedule if custom, otherwise use global/default
-        const freqLabel = useCustom ? med.frequency : "Once daily"; // Default to once daily if using global and no group frequency
-        const times = useGlobalTiming ? globalTimings : med.times;
-        const durLabel = useCustom ? med.duration : "Ongoing";
-        const startDate = useCustom ? med.startDate : new Date();
 
         // Map frequency
         let frequency: 'daily' | 'weekly' | 'custom' | 'as_needed' = 'daily';
-        if (freqLabel.includes("Weekly")) frequency = 'weekly';
-        if (freqLabel === "As needed") frequency = 'as_needed';
-        if (freqLabel === "Custom") frequency = 'custom';
+        if (med.frequency.includes("Weekly")) frequency = 'weekly';
+        if (med.frequency === "As needed") frequency = 'as_needed';
+        if (med.frequency === "Custom") frequency = 'custom';
 
         // Calculate end date based on duration label
         let endDate: string | undefined = undefined;
-        const durationValue = DURATIONS.find(d => d.label === durLabel)?.value;
+        const durationValue = DURATIONS.find(d => d.label === med.duration)?.value;
         if (durationValue && durationValue > 0) {
-          const end = new Date(startDate);
+          const end = new Date(med.startDate);
           end.setDate(end.getDate() + durationValue);
           endDate = end.toISOString();
         }
@@ -304,30 +324,37 @@ export default function AddMedicationScreen() {
         const payload: CreateMedicineInput = {
           name: med.name,
           type: med.type,
-          dosage: med.dosage,
-          dosageUnit: med.dosageUnit,
-          mealTiming: med.mealTiming,
-          prescribedBy: med.prescribedBy,
-          purpose: med.purpose,
-          color: med.color,
-          notes: med.notes,
-          imageUrl: med.imageUri || undefined,
-          refillReminder: med.refillReminder,
-          currentSupply: Number(med.currentSupply) || 0,
-          totalSupply: Number(med.currentSupply) || 0,
-          refillAt: Number(med.refillAt) || 0,
-          reminderEnabled: schedule.reminderEnabled,
-          scheduleGroupId: groupId,
-          patientId: schedule.ownerId === "self" ? undefined : schedule.ownerId,
-          useGlobal: useGlobalTiming,
-          schedule: {
-            times,
-            frequency,
+          dosage: {
+            amount: med.dosage,
+            unit: med.dosageUnit,
+            perIntake: Number(med.perIntake) || 1
+          },
+          routineIds: useCustom ? [] : med.routineIds,
+          customSchedule: {
+            enabled: useCustom,
+            times: useCustom ? med.times : [],
+            frequency: frequency,
           },
           duration: {
-            startDate: startDate.toISOString(),
+            startDate: med.startDate.toISOString(),
             endDate,
-          }
+          },
+          mealTiming: med.mealTiming,
+          prescription: {
+            prescribedBy: med.prescribedBy,
+            purpose: med.purpose,
+          },
+          notes: med.notes,
+          imageUrl: med.imageUri || undefined,
+          color: med.color,
+          refill: {
+            refillReminder: med.refillReminder,
+            remainingQuantity: Number(med.currentSupply) || 0,
+            totalQuantity: Number(med.currentSupply) || 0,
+            refillAt: Number(med.refillAt) || 0,
+          },
+          reminderEnabled: schedule.reminderEnabled,
+          patientId: schedule.ownerId === "self" ? undefined : schedule.ownerId,
         };
 
         const savedMedicine = await createMedicine(payload);
@@ -339,13 +366,13 @@ export default function AddMedicationScreen() {
             id: savedMedicine._id, // Use backend ID
             ownerId: schedule.ownerId,
             startDate: payload.duration.startDate,
-            frequency: freqLabel,
-            times: payload.schedule.times,
-            duration: durLabel,
+            frequency: med.frequency,
+            times: useCustom ? payload.customSchedule.times : routines.filter(r => payload.routineIds?.includes(r._id)).map(r => r.time),
+            duration: med.duration,
           } as any);
         }
 
-        if (payload.refillReminder) {
+        if (payload.refill.refillReminder) {
           await scheduleRefillReminder({
             ...payload,
             id: savedMedicine._id,
@@ -424,10 +451,10 @@ export default function AddMedicationScreen() {
 
   const renderMedicineCard = (med: MedicineEntry, index: number) => {
     const isExpanded = expandedMedicine === index;
-    const hasError = errors[`dosage_${index}`] || errors[`duration_${index}`] || errors[`frequency_${index}`];
+    const hasError = !!(errors[`name_${index}`] || errors[`dosage_${index}`] || errors[`type_${index}`] || errors[`duration_${index}`] || errors[`frequency_${index}`]);
 
     return (
-      <View key={index} style={[styles.medicineCard, hasError && { borderColor: "#FF5252" }]}>
+      <View key={index} style={[styles.medicineCard, hasError && { borderColor: "#FF5252", borderWidth: 2 }]}>
         {/* Medicine Card Header */}
         <TouchableOpacity
           style={styles.medicineCardHeader}
@@ -457,10 +484,8 @@ export default function AddMedicationScreen() {
         {/* Expanded Medicine Fields */}
         {isExpanded && (
           <View style={styles.medicineCardBody}>
-            {/* 1. Medicine Picture */}
+            {/* 0. Medicine Picture */}
             <View style={[styles.innerSection, { borderBottomWidth: 0 }]}>
-              <Text style={styles.innerSectionTitle}>1. Medicine Photo</Text>
-
               <View style={{ alignItems: "center" }}>
                 <TouchableOpacity style={styles.imageContainerSmall} onPress={() => pickImage(index)}>
                   {med.imageUri ? (
@@ -475,18 +500,43 @@ export default function AddMedicationScreen() {
               </View>
             </View>
 
+            {/* 1. Medication Name */}
+            <View style={styles.innerSection}>
+              <Text style={styles.innerSectionTitle}>1. Medication Name</Text>
+              <View style={[styles.inputContainer, !!errors[`name_${index}`] && styles.inputError]}>
+                <TextInput
+                  style={styles.mainInput}
+                  placeholder="e.g. Paracetamol"
+                  placeholderTextColor="#999"
+                  value={med.name}
+                  onChangeText={(text) => {
+                    updateMedicine(index, { name: text });
+                    if (errors[`name_${index}`]) setErrors(prev => {
+                      const newErrs = { ...prev };
+                      delete newErrs[`name_${index}`];
+                      return newErrs;
+                    });
+                  }}
+                />
+              </View>
+            </View>
+
             {/* 2. Dosage & 3. Unit */}
             <View style={styles.innerSection}>
               <Text style={styles.innerSectionTitle}>2. Dosage & 3. Unit</Text>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[styles.mainInput, errors[`dosage_${index}`] && styles.inputError]}
+                  style={[styles.mainInput, !!errors[`dosage_${index}`] && styles.inputError]}
                   placeholder="Dosage (e.g. 500)"
                   placeholderTextColor="#999"
                   value={med.dosage}
                   onChangeText={(text) => {
                     updateMedicine(index, { dosage: text });
-                    if (errors[`dosage_${index}`]) setErrors(prev => ({ ...prev, [`dosage_${index}`]: "" }));
+                    if (errors[`dosage_${index}`]) setErrors(prev => {
+                      const newErrs = { ...prev };
+                      delete newErrs[`dosage_${index}`];
+                      return newErrs;
+                    });
                   }}
                   keyboardType="numeric"
                 />
@@ -504,68 +554,135 @@ export default function AddMedicationScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+
+              <Text style={[styles.subSectionLabel, { marginTop: 12 }]}>Amount per intake</Text>
+              <View style={[styles.inputContainer, { width: 100 }]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="1"
+                  value={med.perIntake}
+                  onChangeText={(text) => updateMedicine(index, { perIntake: text })}
+                  keyboardType="numeric"
+                />
+              </View>
             </View>
 
             {/* 4. Schedule Configuration */}
             <View style={styles.innerSection}>
               <Text style={styles.innerSectionTitle}>4. Schedule Configuration</Text>
 
-              <View style={styles.switchRow}>
-                <View style={styles.switchLabelContainer}>
-                  <View style={styles.iconContainer}>
-                    <Ionicons name="calendar-outline" size={20} color={theme.accent} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.switchLabel}>Custom Schedule</Text>
-                    <Text style={styles.switchSubLabel}>Override global timings</Text>
-                  </View>
-                </View>
-                <Switch
-                  value={med.customSchedule}
-                  onValueChange={(value) => updateMedicine(index, { customSchedule: value })}
-                  trackColor={{ false: "#ddd", true: theme.accent }}
-                  thumbColor="white"
-                />
+              {/* Schedule Type Selector */}
+              <View style={styles.scheduleTypeContainer}>
+                <TouchableOpacity
+                  style={[styles.scheduleTypeBtn, !med.customSchedule && { backgroundColor: theme.accent }]}
+                  onPress={() => updateMedicine(index, { customSchedule: false })}
+                >
+                  <Text style={[styles.scheduleTypeBtnText, !med.customSchedule && { color: 'white' }]}>Routines</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.scheduleTypeBtn, med.customSchedule && { backgroundColor: theme.accent }]}
+                  onPress={() => updateMedicine(index, { customSchedule: true })}
+                >
+                  <Text style={[styles.scheduleTypeBtnText, med.customSchedule && { color: 'white' }]}>Custom</Text>
+                </TouchableOpacity>
               </View>
 
-              {med.customSchedule ? (
+              {!med.customSchedule ? (
                 <View style={{ marginTop: 15 }}>
-                  <Text style={styles.subSectionLabel}>4.1 Medication Time</Text>
-                  <View style={styles.timesContainer}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <Text style={styles.subSectionLabel}>Select Routines</Text>
+                    <TouchableOpacity onPress={() => setShowManageRoutines(true)}>
+                      <Text style={{ fontSize: 13, color: theme.accent, fontWeight: '600' }}>Manage Routines</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {routines.length > 0 ? (
+                    <View style={styles.routinesGrid}>
+                      {routines.map((r) => {
+                        const isSelected = med.routineIds.includes(r._id);
+                        return (
+                          <TouchableOpacity
+                            key={r._id}
+                            style={[
+                              styles.routineChipLarge,
+                              isSelected && { borderColor: theme.accent, borderWidth: 2, backgroundColor: '#F0FDF4' }
+                            ]}
+                            onPress={() => {
+                              const newIds = isSelected
+                                ? med.routineIds.filter(id => id !== r._id)
+                                : [...med.routineIds, r._id];
+                              updateMedicine(index, { routineIds: newIds });
+                            }}
+                          >
+                            <View style={styles.routineChipHeader}>
+                              <Text style={styles.routineChipTitle}>{r.name}</Text>
+                              {isSelected ? (
+                                <Ionicons name="checkmark-circle" size={22} color={theme.accent} />
+                              ) : (
+                                <View style={styles.selectionCircle} />
+                              )}
+                            </View>
+                            <View style={styles.routineChipTimeContainer}>
+                              <Ionicons name="time" size={22} color={theme.accent} />
+                              <Text style={styles.routineChipTime}>
+                                {moment(r.time, 'HH:mm').format('hh:mm A')}
+                              </Text>
+                            </View>
+                            <View style={[styles.selectionBadge, isSelected && { backgroundColor: theme.accent }]}>
+                              <Text style={[styles.selectionBadgeText, isSelected && { color: 'white' }]}>
+                                {isSelected ? 'Selected' : 'Tap to select'}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <TouchableOpacity style={styles.emptyRoutinesBtn} onPress={() => {/* Setup routines */ }}>
+                      <Text style={styles.emptyRoutinesText}>Setup your daily routines first</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                <View style={{ marginTop: 15 }}>
+                  <Text style={styles.subSectionLabel}>Medication Time</Text>
+                  <View style={styles.routinesGrid}>
                     {med.times.map((time, tIndex) => (
                       <TouchableOpacity
                         key={tIndex}
-                        style={styles.timeButton}
+                        style={styles.routineChipLarge}
                         onPress={() => {
                           setActivePickerIndex(index);
                           setActiveTimeIndex(tIndex);
                           setShowTimePicker(true);
                         }}
                       >
-                        <View style={styles.timeIconContainer}>
-                          <Ionicons name="time-outline" size={20} color={theme.accent} />
+                        <View style={styles.routineChipHeader}>
+                          <Text style={styles.routineChipTitle}>Dose {tIndex + 1}</Text>
+                          <Ionicons name="chevron-forward-circle" size={20} color={theme.accent} />
                         </View>
-                        <Text style={styles.timeButtonText}>{time}</Text>
-                        <Ionicons name="chevron-forward" size={20} color="#666" />
+                        <View style={styles.routineChipTimeContainer}>
+                          <Ionicons name="time" size={22} color={theme.accent} />
+                          <Text style={styles.routineChipTime}>
+                            {moment(time, 'HH:mm').format('hh:mm A')}
+                          </Text>
+                        </View>
+                        <View style={styles.selectionBadge}>
+                          <Text style={styles.selectionBadgeText}>Tap to change</Text>
+                        </View>
                       </TouchableOpacity>
                     ))}
                   </View>
 
-                  <Text style={[styles.subSectionLabel, { marginTop: 15 }]}>4.2 Frequency</Text>
-                  {errors[`frequency_${index}`] && <Text style={styles.errorText}>{errors[`frequency_${index}`]}</Text>}
+                  <Text style={[styles.subSectionLabel, { marginTop: 15 }]}>Frequency</Text>
+                  {!!errors[`frequency_${index}`] && <Text style={styles.errorText}>{errors[`frequency_${index}`]}</Text>}
                   {renderFrequencyOptions(index)}
-                </View>
-              ) : (
-                <View style={{ marginTop: 10, padding: 12, backgroundColor: theme.lightAccent, borderRadius: 10 }}>
-                  <Text style={{ fontSize: 13, color: theme.accent, fontStyle: 'italic' }}>
-                    <Ionicons name="information-circle-outline" size={14} color={theme.accent} /> Follows your default profile schedule ({globalTimings.join(", ")})
-                  </Text>
                 </View>
               )}
 
               <View style={{ marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#f0f0f0' }}>
                 <Text style={styles.subSectionLabel}>4.3 For How Long?</Text>
-                {errors[`duration_${index}`] && <Text style={styles.errorText}>{errors[`duration_${index}`]}</Text>}
+                {!!errors[`duration_${index}`] && <Text style={styles.errorText}>{errors[`duration_${index}`]}</Text>}
                 {renderDurationOptions(index)}
 
                 <Text style={[styles.subSectionLabel, { marginTop: 15 }]}>4.4 Start Date</Text>
@@ -588,6 +705,7 @@ export default function AddMedicationScreen() {
             {/* 5. Type */}
             <View style={styles.innerSection}>
               <Text style={styles.innerSectionTitle}>5. Type</Text>
+              {!!errors[`type_${index}`] && <Text style={styles.errorText}>{errors[`type_${index}`]}</Text>}
               <View style={styles.typeGrid}>
                 {MEDICATION_TYPES.map((medType) => (
                   <TouchableOpacity
@@ -664,7 +782,7 @@ export default function AddMedicationScreen() {
                   <View style={styles.inputRow}>
                     <View style={styles.flex1}>
                       <Text style={styles.subSectionLabel}>8.1 Current Supply</Text>
-                      <View style={[styles.inputContainer, errors[`currentSupply_${index}`] && styles.inputError]}>
+                      <View style={[styles.inputContainer, !!errors[`currentSupply_${index}`] && styles.inputError]}>
                         <TextInput
                           style={styles.input}
                           placeholder="0"
@@ -676,7 +794,7 @@ export default function AddMedicationScreen() {
                     </View>
                     <View style={styles.flex1}>
                       <Text style={styles.subSectionLabel}>8.2 Alert At</Text>
-                      <View style={[styles.inputContainer, errors[`refillAt_${index}`] && styles.inputError]}>
+                      <View style={[styles.inputContainer, !!errors[`refillAt_${index}`] && styles.inputError]}>
                         <TextInput
                           style={styles.input}
                           placeholder="0"
@@ -771,7 +889,7 @@ export default function AddMedicationScreen() {
           </View>
 
           {/* Patient Selection */}
-          {(managedPatients.length > 0 || patientId) && (
+          {!!(managedPatients.length > 0 || patientId) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Who is this for?</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.patientSelector} contentContainerStyle={{ paddingBottom: 5 }}>
@@ -817,8 +935,8 @@ export default function AddMedicationScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionTitle}>
-                <Ionicons name="medical-outline" size={18} color={theme.accent} />{" "}
-                Medicines ({medicines.length})
+                <Ionicons name="medical-outline" size={18} color={theme.accent} />
+                {` Medicines (${medicines.length})`}
               </Text>
             </View>
 
@@ -826,8 +944,10 @@ export default function AddMedicationScreen() {
 
             {/* Add Another Medicine Button */}
             <TouchableOpacity style={[styles.addAnotherBtn, { borderColor: theme.accent }]} onPress={addAnotherMedicine}>
-              <Ionicons name="add-circle-outline" size={22} color={theme.accent} />
-              <Text style={[styles.addAnotherText, { color: theme.accent }]}>Add Another Medicine</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="add-circle-outline" size={22} color={theme.accent} />
+                <Text style={[styles.addAnotherText, { color: theme.accent }]}>Add Another Medicine</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -835,8 +955,8 @@ export default function AddMedicationScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="notifications-outline" size={18} color={theme.accent} />{" "}
-              Settings
+              <Ionicons name="notifications-outline" size={18} color={theme.accent} />
+              {" Settings"}
             </Text>
 
             <View style={styles.card}>
@@ -922,6 +1042,17 @@ export default function AddMedicationScreen() {
           </TouchableOpacity>
         </View>
       </View>
+      {/* Manage Routines Bottom Sheet */}
+      <ManageRoutinesBottomSheet
+        visible={showManageRoutines}
+        onClose={async (updated) => {
+          setShowManageRoutines(false);
+          if (updated) {
+            const fetchedRoutines = await getRoutines().catch(() => []);
+            setRoutines(fetchedRoutines);
+          }
+        }}
+      />
     </View>
   );
 }
@@ -1138,4 +1269,65 @@ const styles = StyleSheet.create({
   },
   patientAvatarMiniText: { fontSize: 10, fontWeight: "700", color: "#666" },
   subSectionLabel: { fontSize: 13, fontWeight: "600", color: "#666", marginBottom: 8, marginTop: 4 },
+  scheduleTypeContainer: { flexDirection: 'row', backgroundColor: '#f0f0f0', borderRadius: 12, padding: 4, marginBottom: 15 },
+  scheduleTypeBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
+  scheduleTypeBtnText: { fontSize: 14, fontWeight: '600', color: '#666' },
+  routinesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'space-between' },
+  routineChipLarge: {
+    width: (Dimensions.get("window").width - 88) / 2,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  routineChipHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  routineChipTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#1e293b',
+    flex: 1,
+  },
+  selectionCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+  },
+  routineChipTimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  routineChipTime: {
+    fontSize: 19,
+    fontWeight: '900',
+    color: '#334155',
+  },
+  selectionBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  selectionBadgeText: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '700',
+  },
+  emptyRoutinesBtn: { padding: 20, alignItems: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: '#ccc', borderRadius: 16 },
+  emptyRoutinesText: { color: '#666', fontSize: 14 },
 });
