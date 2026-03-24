@@ -620,8 +620,22 @@ export default function HomeScreen() {
 
                         <View style={[styles.premiumDoseCard, allTaken && styles.premiumDoseCardTaken]}>
                           <View style={styles.groupBadge}>
-                            <Ionicons name="time-outline" size={12} color="#059669" />
-                            <Text style={styles.groupBadgeText}>{routineName || "Custom Slot"} • {group.time}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <Ionicons name="time-outline" size={12} color="#059669" />
+                              <Text style={styles.groupBadgeText}>{routineName || "Custom Slot"} • {group.time}</Text>
+                            </View>
+                            <TouchableOpacity
+                              onPress={() => {
+                                const ids = Array.from(new Set(group.logs.map(l => l.medicineId?._id).filter(id => !!id))).join(',');
+                                router.push({
+                                  pathname: '/medications/edit',
+                                  params: { ids }
+                                });
+                              }}
+                              style={styles.routineHeaderEditBtn}
+                            >
+                              <Ionicons name="pencil" size={14} color="#059669" />
+                            </TouchableOpacity>
                           </View>
 
                           {group.logs.map((log) => {
@@ -643,14 +657,12 @@ export default function HomeScreen() {
                                       <Text style={styles.takenBadgeText}>Taken</Text>
                                     </View>
                                   ) : (
-                                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                                      <TouchableOpacity
-                                        style={styles.premiumTakeBtn}
-                                        onPress={() => handleTakeDose(log._id)}
-                                      >
-                                        <Text style={styles.premiumTakeBtnText}>Take</Text>
-                                      </TouchableOpacity>
-                                    </View>
+                                    <TouchableOpacity
+                                      style={styles.premiumTakeBtn}
+                                      onPress={() => handleTakeDose(log._id)}
+                                    >
+                                      <Text style={styles.premiumTakeBtnText}>Take</Text>
+                                    </TouchableOpacity>
                                   )}
                                 </View>
                               </View>
@@ -1443,18 +1455,21 @@ const styles = StyleSheet.create({
   groupBadge: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#D1FAE5",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     marginBottom: 8,
-    alignSelf: "flex-start",
-    gap: 4,
+    alignSelf: "stretch",
   },
   groupBadgeText: {
     fontSize: 11,
     fontWeight: "700",
     color: "#059669",
+  },
+  routineHeaderEditBtn: {
+    padding: 2,
   },
   groupMedRow: {
     flexDirection: "row",
