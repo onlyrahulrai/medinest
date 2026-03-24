@@ -444,7 +444,7 @@ export default function AddMedicationScreen() {
 
   const renderMedicineCard = (med: MedicineEntry, index: number) => {
     const isExpanded = expandedMedicine === index;
-    const hasError = errors[`name_${index}`] || errors[`dosage_${index}`] || errors[`type_${index}`] || errors[`duration_${index}`] || errors[`frequency_${index}`];
+    const hasError = !!(errors[`name_${index}`] || errors[`dosage_${index}`] || errors[`type_${index}`] || errors[`duration_${index}`] || errors[`frequency_${index}`]);
 
     return (
       <View key={index} style={[styles.medicineCard, hasError && { borderColor: "#FF5252", borderWidth: 2 }]}>
@@ -496,7 +496,7 @@ export default function AddMedicationScreen() {
             {/* 1. Medication Name */}
             <View style={styles.innerSection}>
               <Text style={styles.innerSectionTitle}>1. Medication Name</Text>
-              <View style={[styles.inputContainer, errors[`name_${index}`] && styles.inputError]}>
+              <View style={[styles.inputContainer, !!errors[`name_${index}`] && styles.inputError]}>
                 <TextInput
                   style={styles.mainInput}
                   placeholder="e.g. Paracetamol"
@@ -504,7 +504,11 @@ export default function AddMedicationScreen() {
                   value={med.name}
                   onChangeText={(text) => {
                     updateMedicine(index, { name: text });
-                    if (errors[`name_${index}`]) setErrors(prev => ({ ...prev, [`name_${index}`]: "" }));
+                    if (errors[`name_${index}`]) setErrors(prev => {
+                      const newErrs = { ...prev };
+                      delete newErrs[`name_${index}`];
+                      return newErrs;
+                    });
                   }}
                 />
               </View>
@@ -515,13 +519,17 @@ export default function AddMedicationScreen() {
               <Text style={styles.innerSectionTitle}>2. Dosage & 3. Unit</Text>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[styles.mainInput, errors[`dosage_${index}`] && styles.inputError]}
+                  style={[styles.mainInput, !!errors[`dosage_${index}`] && styles.inputError]}
                   placeholder="Dosage (e.g. 500)"
                   placeholderTextColor="#999"
                   value={med.dosage}
                   onChangeText={(text) => {
                     updateMedicine(index, { dosage: text });
-                    if (errors[`dosage_${index}`]) setErrors(prev => ({ ...prev, [`dosage_${index}`]: "" }));
+                    if (errors[`dosage_${index}`]) setErrors(prev => {
+                      const newErrs = { ...prev };
+                      delete newErrs[`dosage_${index}`];
+                      return newErrs;
+                    });
                   }}
                   keyboardType="numeric"
                 />
@@ -587,7 +595,7 @@ export default function AddMedicationScreen() {
                   </View>
 
                   <Text style={[styles.subSectionLabel, { marginTop: 15 }]}>4.2 Frequency</Text>
-                  {errors[`frequency_${index}`] && <Text style={styles.errorText}>{errors[`frequency_${index}`]}</Text>}
+                  {!!errors[`frequency_${index}`] && <Text style={styles.errorText}>{errors[`frequency_${index}`]}</Text>}
                   {renderFrequencyOptions(index)}
                 </View>
               ) : (
@@ -600,7 +608,7 @@ export default function AddMedicationScreen() {
 
               <View style={{ marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#f0f0f0' }}>
                 <Text style={styles.subSectionLabel}>4.3 For How Long?</Text>
-                {errors[`duration_${index}`] && <Text style={styles.errorText}>{errors[`duration_${index}`]}</Text>}
+                {!!errors[`duration_${index}`] && <Text style={styles.errorText}>{errors[`duration_${index}`]}</Text>}
                 {renderDurationOptions(index)}
 
                 <Text style={[styles.subSectionLabel, { marginTop: 15 }]}>4.4 Start Date</Text>
@@ -623,7 +631,7 @@ export default function AddMedicationScreen() {
             {/* 5. Type */}
             <View style={styles.innerSection}>
               <Text style={styles.innerSectionTitle}>5. Type</Text>
-              {errors[`type_${index}`] && <Text style={styles.errorText}>{errors[`type_${index}`]}</Text>}
+              {!!errors[`type_${index}`] && <Text style={styles.errorText}>{errors[`type_${index}`]}</Text>}
               <View style={styles.typeGrid}>
                 {MEDICATION_TYPES.map((medType) => (
                   <TouchableOpacity
@@ -700,7 +708,7 @@ export default function AddMedicationScreen() {
                   <View style={styles.inputRow}>
                     <View style={styles.flex1}>
                       <Text style={styles.subSectionLabel}>8.1 Current Supply</Text>
-                      <View style={[styles.inputContainer, errors[`currentSupply_${index}`] && styles.inputError]}>
+                      <View style={[styles.inputContainer, !!errors[`currentSupply_${index}`] && styles.inputError]}>
                         <TextInput
                           style={styles.input}
                           placeholder="0"
@@ -712,7 +720,7 @@ export default function AddMedicationScreen() {
                     </View>
                     <View style={styles.flex1}>
                       <Text style={styles.subSectionLabel}>8.2 Alert At</Text>
-                      <View style={[styles.inputContainer, errors[`refillAt_${index}`] && styles.inputError]}>
+                      <View style={[styles.inputContainer, !!errors[`refillAt_${index}`] && styles.inputError]}>
                         <TextInput
                           style={styles.input}
                           placeholder="0"
@@ -807,7 +815,7 @@ export default function AddMedicationScreen() {
           </View>
 
           {/* Patient Selection */}
-          {(managedPatients.length > 0 || patientId) && (
+          {!!(managedPatients.length > 0 || patientId) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Who is this for?</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.patientSelector} contentContainerStyle={{ paddingBottom: 5 }}>
@@ -853,8 +861,8 @@ export default function AddMedicationScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionTitle}>
-                <Ionicons name="medical-outline" size={18} color={theme.accent} />{" "}
-                Medicines ({medicines.length})
+                <Ionicons name="medical-outline" size={18} color={theme.accent} />
+                {` Medicines (${medicines.length})`}
               </Text>
             </View>
 
@@ -862,8 +870,10 @@ export default function AddMedicationScreen() {
 
             {/* Add Another Medicine Button */}
             <TouchableOpacity style={[styles.addAnotherBtn, { borderColor: theme.accent }]} onPress={addAnotherMedicine}>
-              <Ionicons name="add-circle-outline" size={22} color={theme.accent} />
-              <Text style={[styles.addAnotherText, { color: theme.accent }]}>Add Another Medicine</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="add-circle-outline" size={22} color={theme.accent} />
+                <Text style={[styles.addAnotherText, { color: theme.accent }]}>Add Another Medicine</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -871,8 +881,8 @@ export default function AddMedicationScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              <Ionicons name="notifications-outline" size={18} color={theme.accent} />{" "}
-              Settings
+              <Ionicons name="notifications-outline" size={18} color={theme.accent} />
+              {" Settings"}
             </Text>
 
             <View style={styles.card}>
