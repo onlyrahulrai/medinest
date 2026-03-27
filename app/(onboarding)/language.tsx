@@ -25,7 +25,9 @@ export default function LanguageSelectionScreen() {
   };
 
   const handleNext = () => {
-    router.push('/(auth)/login');
+    // After language selection, go to login
+    // User will authenticate, then be directed to onboarding or home
+    router.replace('/(auth)/login');
   };
 
   return (

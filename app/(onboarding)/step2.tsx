@@ -22,7 +22,6 @@ import {
 } from "../../utils/onboardingHelpers";
 import { updateOnboarding } from "../../reducers";
 import "../../utils/i18n";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PREDEFINED_CONDITIONS = [
   "Diabetes",
@@ -100,12 +99,11 @@ export default function Step2Screen() {
     setIsSaving(true);
 
     try {
-      const lang = await AsyncStorage.getItem("user-language");
-
       // Build payload for step 2
+      // IMPORTANT: Do NOT send languages here - buildOnboardingPayload(2) doesn't include it
+      // This prevents accidentally overwriting the user's language preference
       const payload = buildOnboardingPayload(2, {
         conditions: selectedConditions,
-        languages: [lang], // No language selection in step 2, will be handled in step 5
       });
 
       console.log("Onboarding Step 2 payload:", payload);

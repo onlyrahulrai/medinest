@@ -6,9 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { saveUserProfile, UserProfile } from '../../utils/storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mapRemoteProfileToLocalProfile, fetchCurrentUserProfile } from '../../services/api/profile';
-import { updateOnboardingProfile, buildOnboardingPayload } from '../../utils/onboardingHelpers';
+import { updateOnboardingProfile, buildOnboardingPayload, getLanguagePreference } from '../../utils/onboardingHelpers';
 import { updateOnboarding } from '../../reducers';
 import '../../utils/i18n';
 
@@ -65,7 +64,8 @@ export default function Step5Screen() {
     setIsSaving(true);
     try {
       const conditions = conditionsString ? JSON.parse(conditionsString) : [];
-      const lang = await AsyncStorage.getItem('user-language');
+      // Use the new helper to get language preference
+      const lang = await getLanguagePreference();
 
       // Build final onboarding payload (step 5 = completed)
       const payload = buildOnboardingPayload(5, {

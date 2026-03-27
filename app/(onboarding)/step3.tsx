@@ -5,7 +5,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchCurrentUserProfile } from '../../services/api/profile';
 import { updateOnboardingProfile, buildOnboardingPayload, validateCaregiverPhone } from '../../utils/onboardingHelpers';
 import { updateOnboarding } from '../../reducers';

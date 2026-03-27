@@ -40,6 +40,8 @@ export function useAuth() {
             await authService.sendOtp(phoneNumber);
             return { success: true };
         } catch (err: any) {
+            console.log('OTP request error', err);
+
             const errorMessage =
                 err.response?.data?.phone ||
                 err.response?.data?.message ||
