@@ -10,6 +10,8 @@ interface AuthState {
     access: string | null;
     refresh: string | null;
     onboarding: OnboardingStatus | null;
+    networkInfo?: any; // Optional, can be set by AuthSync
+    language?: string | null; // Optional, can be set by AuthSync
     isSessionRestoring: boolean;
 }
 
@@ -18,6 +20,8 @@ const initialState: AuthState = {
     access: null,
     refresh: null,
     onboarding: null,
+    networkInfo: null,
+    language: "en",
     isSessionRestoring: true, // Start as true to prevent flash of login during boot
 };
 
@@ -27,6 +31,14 @@ export const authSlice = createSlice({
     reducers: {
         setSessionRestoring: (state, action: PayloadAction<boolean>) => {
             state.isSessionRestoring = action.payload;
+        },
+        setNetworkInfo: (state, action: PayloadAction<any>) => {
+            const { isConnected:connected, type } = action.payload;
+
+            state.networkInfo = { connected, type };
+        },
+        setLanguage: (state, action: PayloadAction<string>) => {
+            state.language = action.payload;
         },
         authenticated: (state, action: PayloadAction<{
             user: Record<string, any>;
@@ -84,6 +96,7 @@ export const {
     setSessionRestoring,
     updateUserProfile,
     updateOnboarding,
+    setNetworkInfo,
 } = authSlice.actions;
 
 export default authSlice.reducer;

@@ -8,7 +8,7 @@ const authPersistConfig = {
   key: 'auth',
   storage: AsyncStorage,
   whitelist: ['user', 'access', 'onboarding'],
-  blacklist: ['isSessionRestoring'],
+  blacklist: ['isSessionRestoring', "networkInfo"], // Don't persist session restoring flag or network info
 };
 
 
