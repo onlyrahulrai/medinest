@@ -65,6 +65,7 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "^13.12.5",
     "react-redux": "^9.2.0",
+    "redux-persist": "^6.0.0",
     "viem": "^2.21.55"
   },
   "devDependencies": {
