@@ -125,21 +125,26 @@ export default function EditProfileScreen() {
         setIsSaving(true);
 
         try {
+            const profile: Record<string, any> = {
+                bio,
+                dateOfBirth: dateOfBirth.toISOString(),
+                gender,
+                weight: Number(weight),
+                height: Number(height),
+                bloodGroup,
+                conditions: selectedConditions,
+                address
+            }
+
+            if (pic) {
+                profile.pic = pic;
+            }
+
             const updatedProfile = {
                 name,
                 phone,
                 email,
-                profile: {
-                    pic,
-                    bio,
-                    dateOfBirth: dateOfBirth.toISOString(),
-                    gender,
-                    weight: Number(weight),
-                    height: Number(height),
-                    bloodGroup,
-                    conditions: selectedConditions,
-                    address
-                }
+                profile
             }
 
             const result = await editUserProfile(updatedProfile);
