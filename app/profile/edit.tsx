@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +20,8 @@ const PREDEFINED_CONDITIONS = [
     'None'
 ];
 
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
 export default function EditProfileScreen() {
     const router = useRouter();
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -33,11 +35,13 @@ export default function EditProfileScreen() {
     const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
     const [email, setEmail] = useState("")
     const [bloodGroup, setBloodGroup] = useState("")
+    const [showBloodGroupPicker, setShowBloodGroupPicker] = useState(false);
     const [bio, setBio] = useState("");
     const [address, setAddress] = useState("");
     const [weight, setWeight] = useState('');
     const [height, setHeight] = useState('');
     const [image, setImage] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [isSaving, setIsSaving] = useState(false);
     const user = useSelector((state: any) => state.auth.user);
     const { editUserProfile } = useAuth();
@@ -136,6 +140,10 @@ export default function EditProfileScreen() {
                     result.message || "Profile updated successfully.",
                 );
                 router.back();
+            }
+
+            if (result?.fields) {
+                setFieldErrors(result.fields);
             }
 
         } catch (error) {
@@ -275,27 +283,54 @@ export default function EditProfileScreen() {
                         </View>
                         <Text style={styles.label}>Phone Number *</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, fieldErrors.phone && styles.inputError]}
                             value={phone}
-                            onChangeText={setPhone}
+                            onChangeText={(text) => {
+                                setPhone(text);
+                                if (fieldErrors.phone) {
+                                    setFieldErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors.phone;
+                                        return newErrors;
+                                    });
+                                }
+                            }}
                             keyboardType="phone-pad"
                             placeholderTextColor="#999"
                         />
+                        {fieldErrors.phone && <Text style={styles.errorText}>{fieldErrors.phone}</Text>}
+
                         <Text style={styles.label}>Email</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, fieldErrors.email && styles.inputError]}
                             value={email}
-                            onChangeText={setEmail}
+                            onChangeText={(text) => {
+                                setEmail(text);
+                                if (fieldErrors.email) {
+                                    setFieldErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors.email;
+                                        return newErrors;
+                                    });
+                                }
+                            }}
                             keyboardType="email-address"
                             placeholderTextColor="#999"
                         />
+                        {fieldErrors.email && <Text style={styles.errorText}>{fieldErrors.email}</Text>}
+
                         <Text style={styles.label}>Blood Group</Text>
-                        <TextInput
+                        <TouchableOpacity
                             style={styles.input}
-                            value={bloodGroup}
-                            onChangeText={setBloodGroup}
-                            placeholderTextColor="#999"
-                        />
+                            onPress={() => setShowBloodGroupPicker(true)}
+                        >
+                            <View style={styles.selectRow}>
+                                <Text style={[styles.selectText, !bloodGroup && styles.placeholderText]}>
+                                    {bloodGroup || 'Select Blood Group'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={20} color="#999" />
+                            </View>
+                        </TouchableOpacity>
                         <Text style={styles.label}>Bio</Text>
                         <TextInput
                             style={styles.input}
@@ -350,6 +385,50 @@ export default function EditProfileScreen() {
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
+
+                {/* Blood Group Picker Modal */}
+                <Modal
+                    visible={showBloodGroupPicker}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setShowBloodGroupPicker(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.modalOverlay}
+                        activeOpacity={1}
+                        onPress={() => setShowBloodGroupPicker(false)}
+                    >
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>Select Blood Group</Text>
+                                <TouchableOpacity onPress={() => setShowBloodGroupPicker(false)}>
+                                    <Ionicons name="close" size={24} color="#333" />
+                                </TouchableOpacity>
+                            </View>
+                            <ScrollView>
+                                {BLOOD_GROUPS.map((group) => (
+                                    <TouchableOpacity
+                                        key={group}
+                                        style={[
+                                            styles.relationOption,
+                                            bloodGroup === group && styles.relationOptionActive
+                                        ]}
+                                        onPress={() => {
+                                            setBloodGroup(group);
+                                            setShowBloodGroupPicker(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.relationOptionText,
+                                            bloodGroup === group && styles.relationOptionTextActive
+                                        ]}>{group}</Text>
+                                        {bloodGroup === group && <Ionicons name="checkmark" size={20} color="#4CAF50" />}
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
             </KeyboardAvoidingView>
         </View>
     );
@@ -619,5 +698,26 @@ const styles = StyleSheet.create({
     relationOptionTextActive: {
         color: '#4CAF50',
         fontWeight: 'bold',
+    },
+    inputError: {
+        borderColor: '#DC2626',
+    },
+    errorText: {
+        color: '#DC2626',
+        fontSize: 12,
+        marginTop: 4,
+        marginLeft: 4,
+    },
+    selectRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    selectText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    placeholderText: {
+        color: '#999',
     },
 });
