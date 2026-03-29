@@ -34,7 +34,7 @@ import {
   type UpdateMedicineInput,
   type CreateMedicineInput
 } from "../../services/api/medicines";
-import { getRoutines, Routine } from "../../services/api/routines";
+import RoutineService, { type Routine } from "../../services/api/routine";
 
 // Top-level width calculation moved into the component for better reliability.
 
@@ -205,7 +205,7 @@ export default function EditMedicationScreen() {
       try {
         const [profile, fetchedRoutines, allMeds] = await Promise.all([
           getUserProfile(),
-          getRoutines().catch(() => []),
+          RoutineService.getRoutines().catch(() => []),
           apiGetAllMedicines().catch(() => [])
         ]);
 
@@ -213,6 +213,7 @@ export default function EditMedicationScreen() {
         setRoutines(fetchedRoutines);
 
         let medsToEdit = [];
+
         if (idsParam) {
           const idList = idsParam.split(',');
           medsToEdit = allMeds.filter((m: any) => idList.includes(m._id));
@@ -1065,7 +1066,7 @@ export default function EditMedicationScreen() {
         onClose={async (updated) => {
           setShowManageRoutines(false);
           if (updated) {
-            const fetchedRoutines = await getRoutines().catch(() => []);
+            const fetchedRoutines = await RoutineService.getRoutines().catch(() => []);
             setRoutines(fetchedRoutines);
           }
         }}

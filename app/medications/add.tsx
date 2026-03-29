@@ -33,7 +33,7 @@ import {
   scheduleRefillReminder,
 } from "../../utils/notifications";
 import { createMedicine, type CreateMedicineInput } from "../../services/api/medicines";
-import { getRoutines, createRoutine, Routine } from "../../services/api/routines";
+import RoutineService, { type Routine } from "../../services/api/routine";
 
 // Top-level width calculation moved into the component for better reliability with Expo Go/Bridgeless mode.
 
@@ -181,7 +181,7 @@ export default function AddMedicationScreen() {
     const loadInitialData = async () => {
       const [profile, fetchedRoutines] = await Promise.all([
         getUserProfile(),
-        getRoutines().catch(() => [])
+        RoutineService.getRoutines().catch(() => [])
       ]);
       setUserProfile(profile as any);
       setManagedPatients(profile?.managedPatients || []);

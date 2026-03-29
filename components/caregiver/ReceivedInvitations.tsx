@@ -1,4 +1,4 @@
-import { caregiverApi } from "@/services/api/caregiverApi";
+import InvitationService from "@/services/api/invitation";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
@@ -10,7 +10,7 @@ export default function ReceivedInvitations() {
     const getCaregivers = async () => {
         setLoading(true);
         try {
-            const invitations = await caregiverApi.getInvitations({ type: "incoming" });
+            const invitations = await InvitationService.getInvitations({ type: "incoming" });
 
             setInvitations(invitations);
         } catch (error: any) {

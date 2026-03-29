@@ -1,16 +1,16 @@
-import { caregiverApi } from "@/services/api/caregiverApi";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import InvitationService from "@/services/api/invitation";
 
-export default function SentCaregiverRequests() {
+export default function SentInvitations() {
     const [caregivers, setCaregivers] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const getCaregivers = async () => {
         setLoading(true);
         try {
-            const caregivers = await caregiverApi.getInvitations({ type: "sent" });
+            const caregivers = await InvitationService.getInvitations({ type: "sent" });
 
             setCaregivers(caregivers);
         } catch (error: any) {

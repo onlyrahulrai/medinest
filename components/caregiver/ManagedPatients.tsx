@@ -1,4 +1,4 @@
-import { caregiverApi } from "@/services/api/caregiverApi";
+import RelationService from "@/services/api/relation";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ export default function ManagedPatients() {
     const getCaregiverRelations = async () => {
         setLoading(true);
         try {
-            const patients = await caregiverApi.getCaregiverRelations({ role: "caregiver" });
+            const patients = await RelationService.getRelations({ role: "caregiver" });
 
             setPatients(patients);
         } catch (error: any) {
