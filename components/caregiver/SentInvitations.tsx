@@ -1,7 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import InvitationService from "@/services/api/invitation";
+
+const Invitation_Status: any = {
+    pending: "Pending",
+    accepted: "Connected",
+    rejected: "Rejected",
+    expired: "Expired",
+};
 
 export default function SentInvitations() {
     const [caregivers, setCaregivers] = useState([]);
@@ -24,12 +31,26 @@ export default function SentInvitations() {
         getCaregivers();
     }, []);
 
-    const handleResendInvitation = (caregiver: any) => {
-        console.log("Resend invitation to", caregiver);
+    const handleResendInvitation = async (caregiver: any) => {
+        console.log("Caregiver Id: ", caregiver?._id);
+
+        try {
+            await InvitationService.resendInvitation(caregiver._id);
+
+
+            Alert.alert("✅ Invitation Resent", "Invitation has been resent to the caregiver.");
+        } catch (error: any) {
+            Alert.alert("Error", error?.response?.data?.message || error?.message || "Failed to resend invitation");
+        }
     };
 
-    const handleRemoveCaregiver = (caregiverName: string, caregiverId: string) => {
-        console.log("Remove caregiver", caregiverName, caregiverId);
+    const handleRemoveCaregiver = async (caregiverName: string, caregiverId: string) => {
+        try {
+            await InvitationService.deleteInvitation(caregiverId);
+            Alert.alert("✅ Caregiver Removed", "Caregiver has been removed successfully.");
+        } catch (error: any) {
+            Alert.alert("Error", error?.response?.data?.message || error?.message || "Failed to remove caregiver");
+        }
     };
 
     return (
@@ -74,9 +95,7 @@ export default function SentInvitations() {
                                             caregiver.status === 'rejected' ? styles.statusTextRejected :
                                                 styles.statusTextPending
                                     ]}>
-                                        {caregiver.status === 'accepted' ? "Connected" :
-                                            caregiver.status === 'rejected' ? "Rejected" :
-                                                "Invitation Sent"}
+                                        {Invitation_Status[caregiver.status]}
                                     </Text>
                                 </View>
                             </View>

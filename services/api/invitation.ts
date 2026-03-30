@@ -19,8 +19,8 @@ export default {
     const res = await axiosInstance.delete(`/caregiver/invitations/${id}`);
     return res.data;
   },
-  respondToInvitation: async (id: string, status: 'accepted' | 'rejected') => {
-    const res = await axiosInstance.post(`/caregiver/invitations/${id}/respond`, { status });
+  respondToInvitation: async (id: string, action: 'accept' | 'reject') => {
+    const res = await axiosInstance.patch(`/caregiver/invitations/${id}/respond`, { action });
     return res.data;
   },
   resendInvitation: async (id: string) => {

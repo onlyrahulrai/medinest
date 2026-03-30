@@ -1,13 +1,59 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Modal, TextInput, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import RoutineService, { Routine } from '@/services/api/routine';
-
+import DateTimePicker from "@react-native-community/datetimepicker";
+import moment from "moment";
 export default function ProfileRoutinesSection() {
     const [routines, setRoutines] = useState<Routine[]>([]);
     const [loading, setLoading] = useState(false);
     const [expanded, setExpanded] = useState(false);
+
+    const [showFormModal, setShowFormModal] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [editId, setEditId] = useState<string | null>(null);
+    const [routineName, setRoutineName] = useState("");
+    const [routineTime, setRoutineTime] = useState(new Date());
+
+    const openAddModal = () => {
+        setEditId(null);
+        setRoutineName("");
+        setRoutineTime(moment('08:00', 'HH:mm').toDate());
+        setShowFormModal(true);
+    };
+
+    const openEditModal = (routine: Routine) => {
+        setEditId(routine._id);
+        setRoutineName(routine.name);
+        setRoutineTime(moment(routine.time, 'HH:mm').toDate());
+        setShowFormModal(true);
+    };
+
+    const handleSave = async () => {
+        if (!routineName.trim()) {
+            Alert.alert("Error", "Please enter a routine name");
+            return;
+        }
+        try {
+            const timeStr = moment(routineTime).format('HH:mm');
+            if (editId) {
+                const updated = await RoutineService.updateRoutine(editId, { name: routineName, time: timeStr });
+                setRoutines(prev => prev.map(r => r._id === editId ? updated : r));
+            } else {
+                const created = await RoutineService.createRoutine({ name: routineName, time: timeStr });
+                setRoutines(prev => [...prev, created]);
+            }
+            setShowFormModal(false);
+            setEditId(null);
+        } catch (error: any) {
+            Alert.alert("Error", error?.response?.data?.message || "Failed to save routine");
+        }
+    };
+
+    const handleTimeChange = (event: any, selectedDate?: Date) => {
+        setShowTimePicker(Platform.OS === 'ios');
+        if (selectedDate) setRoutineTime(selectedDate);
+    };
 
     const fetchRoutines = useCallback(async () => {
         setLoading(true);
@@ -107,13 +153,21 @@ export default function ProfileRoutinesSection() {
                     </View>
                     <Text style={styles.sectionTitle}>My Routines</Text>
                 </View>
-                {routines.length > 0 && (
-                    <View style={styles.statsRow}>
+                <View style={styles.statsRow}>
+                    {routines.length > 0 && (
                         <View style={styles.statBadge}>
                             <Text style={styles.statText}>{activeCount} active</Text>
                         </View>
-                    </View>
-                )}
+                    )}
+                    <TouchableOpacity
+                        onPress={openAddModal}
+                        style={styles.addButton}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="add-circle-outline" size={16} color="#059669" />
+                        <Text style={styles.addButtonText}>Add New</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {loading ? (
@@ -151,6 +205,13 @@ export default function ProfileRoutinesSection() {
                                 </View>
                                 <View style={styles.routineActions}>
                                     <TouchableOpacity
+                                        style={[styles.iconBtn, { backgroundColor: '#F0F9FF', marginRight: 4 }]}
+                                        onPress={() => openEditModal(routine)}
+                                        activeOpacity={0.6}
+                                    >
+                                        <Ionicons name="pencil-outline" size={16} color="#0284C7" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
                                         style={styles.iconBtn}
                                         onPress={() => handleDeleteRoutine(routine)}
                                         activeOpacity={0.6}
@@ -180,6 +241,61 @@ export default function ProfileRoutinesSection() {
                         </TouchableOpacity>
                     )}
                 </View>
+            )}
+
+            {/* Form Modal */}
+            <Modal visible={showFormModal} transparent animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>
+                            {editId ? 'Edit Routine' : 'New Routine'}
+                        </Text>
+
+                        <Text style={styles.modalLabel}>Routine Name</Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder="e.g. Afternoon, Bedtime"
+                            value={routineName}
+                            onChangeText={setRoutineName}
+                            returnKeyType="done"
+                        />
+
+                        <Text style={styles.modalLabel}>Occurrence Time</Text>
+                        <TouchableOpacity style={styles.timeSelectBtn} onPress={() => setShowTimePicker(true)}>
+                            <Ionicons name="time-outline" size={20} color="#059669" />
+                            <Text style={styles.timeSelectText}>
+                                {moment(routineTime).format('hh:mm A')}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity
+                                style={styles.modalCancelBtn}
+                                onPress={() => {
+                                    setShowFormModal(false);
+                                    setEditId(null);
+                                }}
+                            >
+                                <Text style={styles.modalCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSave}>
+                                <Text style={styles.modalSaveText}>
+                                    {editId ? 'Update' : 'Add Routine'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {showTimePicker && (
+                <DateTimePicker
+                    value={routineTime}
+                    mode="time"
+                    is24Hour={false}
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleTimeChange}
+                />
             )}
         </View>
     );
@@ -355,5 +471,106 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#059669',
+    },
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: '#F0FDF4',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#BBF7D0',
+    },
+    addButtonText: {
+        color: '#059669',
+        fontWeight: '600',
+        fontSize: 13,
+    },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'center',
+        padding: 24,
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 30,
+        padding: 28,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: '900',
+        marginBottom: 24,
+        color: '#1E293B',
+        textAlign: 'center',
+    },
+    modalLabel: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#64748B',
+        marginBottom: 10,
+        marginLeft: 4,
+    },
+    modalInput: {
+        backgroundColor: '#F8FAFC',
+        padding: 18,
+        borderRadius: 16,
+        fontSize: 17,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        color: '#1E293B',
+        fontWeight: '600',
+    },
+    timeSelectBtn: {
+        backgroundColor: '#F0FDF4',
+        padding: 18,
+        borderRadius: 16,
+        marginBottom: 28,
+        borderWidth: 1.5,
+        borderColor: '#A7F3D0',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    timeSelectText: {
+        color: '#059669',
+        fontSize: 18,
+        fontWeight: '800',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 14,
+    },
+    modalCancelBtn: {
+        padding: 16,
+    },
+    modalCancelText: {
+        color: '#64748B',
+        fontWeight: '800',
+        fontSize: 16,
+    },
+    modalSaveBtn: {
+        backgroundColor: '#059669',
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        borderRadius: 16,
+        shadowColor: '#059669',
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 8,
+    },
+    modalSaveText: {
+        color: 'white',
+        fontWeight: '900',
+        fontSize: 17,
     },
 });

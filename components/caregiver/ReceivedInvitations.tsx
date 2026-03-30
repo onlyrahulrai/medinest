@@ -23,7 +23,7 @@ export default function ReceivedInvitations() {
     const fetchInvitations = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await InvitationService.getInvitations({ type: "incoming" });
+            const data = await InvitationService.getInvitations({ type: "incoming", status: "pending" });
             setInvitations(data || []);
         } catch (error: any) {
             console.error("Failed to fetch invitations", error?.response?.data || error);
@@ -39,11 +39,12 @@ export default function ReceivedInvitations() {
     const handleAcceptInvitation = async (invitationId: string) => {
         setActionLoadingId(invitationId);
         try {
-            await InvitationService.respondToInvitation(invitationId, 'accepted');
+            await InvitationService.respondToInvitation(invitationId, 'accept');
             // Optimistic removal
             setInvitations(prev => prev.filter(inv => inv._id !== invitationId));
             Alert.alert("✅ Accepted", "You've accepted the caregiver request. They can now manage your medications.");
         } catch (error: any) {
+            console.log("Error: ", error);
             Alert.alert("Error", error?.response?.data?.message || error?.message || "Failed to accept invitation");
         } finally {
             setActionLoadingId(null);
@@ -62,10 +63,11 @@ export default function ReceivedInvitations() {
                     onPress: async () => {
                         setActionLoadingId(invitationId);
                         try {
-                            await InvitationService.respondToInvitation(invitationId, 'rejected');
+                            await InvitationService.respondToInvitation(invitationId, 'reject');
                             // Optimistic removal
                             setInvitations(prev => prev.filter(inv => inv._id !== invitationId));
                         } catch (error: any) {
+                            console.log("Error: --------> ", error)
                             Alert.alert("Error", error?.response?.data?.message || error?.message || "Failed to decline invitation");
                         } finally {
                             setActionLoadingId(null);
@@ -161,7 +163,7 @@ export default function ReceivedInvitations() {
                                     </View>
                                     <View style={styles.pendingBadge}>
                                         <View style={styles.pendingDot} />
-                                        <Text style={styles.pendingText}>Awaiting Response</Text>
+                                        <Text style={styles.pendingText}>{inv.status?.toUpperCase() || "PENDING"}</Text>
                                     </View>
                                 </View>
                             )}
