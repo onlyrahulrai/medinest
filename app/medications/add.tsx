@@ -691,7 +691,7 @@ export default function AddMedicationScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
                   <Text style={[styles.subSectionLabel, { marginBottom: 0, marginTop: 0 }]}>4.3 Duration Override</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, color: '#666', marginRight: 8 }}>Use Group Duration</Text>
+                    <Text style={{ fontSize: 13, color: '#666', marginRight: 8 }}>Sync with Plan Duration</Text>
                     <Switch
                       value={med.useGroupDuration}
                       onValueChange={(val) => updateMedicine(index, { useGroupDuration: val })}
@@ -725,7 +725,7 @@ export default function AddMedicationScreen() {
                 {med.useGroupDuration && (
                   <View style={{ padding: 12, backgroundColor: '#f9fafb', borderRadius: 8, borderWidth: 1, borderColor: '#f1f5f9' }}>
                     <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center' }}>
-                      Inheriting Group Duration: {schedule.duration} starting from {schedule.startDate.toLocaleDateString()}
+                      Shared Plan Duration: {schedule.duration} starting from {schedule.startDate.toLocaleDateString()}
                     </Text>
                   </View>
                 )}
@@ -961,14 +961,14 @@ export default function AddMedicationScreen() {
             </View>
           )}
 
-          {/* ======= GROUP DETAILS SECTION ======= */}
+          {/* ======= TREATMENT PLAN SECTION ======= */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               <Ionicons name="folder-outline" size={18} color={theme.accent} />
-              {" Group Details"}
+              {" Treatment Plan"}
             </Text>
             <View style={styles.card}>
-              <Text style={styles.subSectionLabel}>Group Name / Purpose (Optional)</Text>
+              <Text style={styles.subSectionLabel}>Plan Name / Purpose (Optional)</Text>
               <View style={[styles.inputContainer, { marginBottom: 20 }]}>
                 <TextInput
                   style={styles.input}
