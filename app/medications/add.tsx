@@ -10,7 +10,6 @@ import {
   Switch,
   Dimensions,
   Platform,
-  KeyboardAvoidingView,
   Alert,
   Image,
 } from "react-native";
@@ -18,16 +17,14 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import * as ImagePicker from "expo-image-picker";
 import ManageRoutinesBottomSheet from "../../components/medications/ManageRoutinesBottomSheet";
 import {
   getUserProfile,
   ManagedPatient,
-  Medication,
   UserProfile
 } from "../../utils/storage";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import {
   scheduleMedicationReminder,
   scheduleRefillReminder,
