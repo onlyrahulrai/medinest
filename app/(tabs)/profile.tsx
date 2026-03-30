@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Modal, 
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCaregivers, useAddCaregiver, useDeleteCaregiver, useRespondInvitation, useCheckUserExists } from '../../hooks/useCaregiverHooks';
+import { useCaregivers, useAddCaregiver, useDeleteCaregiver, useRespondInvitation } from '../../hooks/useCaregiverHooks';
+import { openAddCaregiverSheet } from '../../utils/events';
 import { useSelector } from 'react-redux';
 import SentInvitations from '@/components/caregiver/SentInvitations';
 import ReceivedInvitations from '@/components/caregiver/ReceivedInvitations';
@@ -12,10 +13,7 @@ import ManagedPatients from '@/components/caregiver/ManagedPatients';
 export default function ProfileScreen() {
     const router = useRouter();
     const user = useSelector((state: any) => state.auth.user);
-    const [showAddCaregiver, setShowAddCaregiver] = useState(false);
-    const [newCaregiverName, setNewCaregiverName] = useState("");
-    const [newCaregiverPhone, setNewCaregiverPhone] = useState("");
-    const [newCaregiverRelation, setNewCaregiverRelation] = useState("");
+
 
     const [isLoading, setIsLoading] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -25,7 +23,6 @@ export default function ProfileScreen() {
     const { deleteCaregiver } = useDeleteCaregiver();
     const { respondInvitation } = useRespondInvitation();
     const { data: caregiversList, refetch: refetchCaregivers } = useCaregivers();
-    const { checkUser, isExistingUser, existsName, isLookupLoading } = useCheckUserExists();
 
     const handleAcceptInvitation = async (invitationId: string) => {
         setIsActionLoading(true);
@@ -63,28 +60,7 @@ export default function ProfileScreen() {
         );
     };
 
-    const handleAddCaregiver = async () => {
-        if (!newCaregiverPhone) return;
 
-        setIsActionLoading(true);
-        try {
-            await addCaregiver({
-                caregiverName: newCaregiverName || existsName,
-                caregiverPhone: newCaregiverPhone,
-                relation: newCaregiverRelation || "Other"
-            });
-
-            Alert.alert("Success", "Caregiver invitation has been sent/updated.");
-            setShowAddCaregiver(false);
-            setNewCaregiverName("");
-            setNewCaregiverPhone("");
-            setNewCaregiverRelation("");
-        } catch (error: any) {
-            Alert.alert("Error", error?.message || "Failed to add caregiver");
-        } finally {
-            setIsActionLoading(false);
-        }
-    };
 
     const handleRemoveCaregiver = (name: string, relationId: string) => {
         Alert.alert(
@@ -230,7 +206,7 @@ export default function ProfileScreen() {
                 <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
                         <Text style={styles.sectionTitle}>Caregiver Status</Text>
-                        <TouchableOpacity onPress={() => setShowAddCaregiver(true)}>
+                        <TouchableOpacity onPress={openAddCaregiverSheet}>
                             <Text style={styles.addCaregiverBtn}>+ Invite New</Text>
                         </TouchableOpacity>
                     </View>
@@ -272,35 +248,7 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
             </ScrollView>
 
-            <Modal visible={showAddCaregiver} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Add Caregiver</Text>
-                            <TouchableOpacity onPress={() => setShowAddCaregiver(false)}>
-                                <Ionicons name="close" size={24} color="#333" />
-                            </TouchableOpacity>
-                        </View>
 
-                        <Text style={styles.inputLabel}>Name</Text>
-                        <TextInput style={styles.modalInput} placeholder="e.g. Jane Doe" value={newCaregiverName} onChangeText={setNewCaregiverName} placeholderTextColor="#999" />
-
-                        <Text style={styles.inputLabel}>Phone Number</Text>
-                        <TextInput style={styles.modalInput} placeholder="e.g. 9876543210" value={newCaregiverPhone} onChangeText={(text) => { setNewCaregiverPhone(text); checkUser(text); }} keyboardType="phone-pad" placeholderTextColor="#999" />
-
-                        <Text style={styles.inputLabel}>Relation</Text>
-                        <TextInput style={styles.modalInput} placeholder="e.g. Spouse" value={newCaregiverRelation} onChangeText={setNewCaregiverRelation} placeholderTextColor="#999" />
-
-                        <TouchableOpacity
-                            style={[styles.saveBtn, (!newCaregiverPhone || isActionLoading) && styles.saveBtnDisabled]}
-                            onPress={handleAddCaregiver}
-                            disabled={!newCaregiverPhone || isActionLoading}
-                        >
-                            {isActionLoading ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Save Caregiver</Text>}
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
         </View>
     );
 }
